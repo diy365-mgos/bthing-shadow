@@ -1,0 +1,34 @@
+author: DIY365
+type: lib
+description: Mongoose-OS library for managing bThings states as a single shadow representation.
+version: 1.0
+
+build_vars:
+  MGOS_BTHING_SHADOW_STATE_MODE: "enabled"
+
+cdefs:
+  MGOS_BTHING_SHADOW_STATE_MODE: 1
+
+sources:
+  - src
+
+includes:
+  - include
+
+filesystem:
+  - fs
+
+config_schema:
+  - ["bthing.shadow", "o", {title: "bThing shadow settings"}]
+  - ["bthing.shadow.optimize", "b", false, {title: "Optimize shadow collecting us much changes as possibles in one single change"}]
+  - ["bthing.shadow.optimize_timeout", "i", 100, {title: "The optimize timeout, in milliseconds"}]
+
+libs:
+  - origin: https://github.com/diy365-mgos/bthing
+  - origin: https://github.com/diy365-mgos/bvar-json
+  - origin: https://github.com/diy365-mgos/bvar-dic
+
+tags:
+  - c
+
+manifest_version: 2017-09-29
