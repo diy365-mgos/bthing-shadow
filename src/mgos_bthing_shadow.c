@@ -16,8 +16,8 @@ static struct mg_bthing_shadow_ctx {
 
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   if (ev == MGOS_EV_BTHING_CREATED) {
-    const char *key = mgos_bthing_get_id((mgos_bvar_t)ev_data);
-    if (!mgos_bvar_add_key(s_ctx.state.full_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state((mgos_bvar_t)ev_data))) {
+    const char *key = mgos_bthing_get_id((mgos_bthing_t)ev_data);
+    if (!mgos_bvar_add_key(s_ctx.state.full_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state((mgos_bthing_t)ev_data))) {
       LOG(LL_ERROR, ("Error including '%s' state to the full shadow.", key));
     }
   }
@@ -52,8 +52,6 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
   (void) ev;
 }
 
-int64_t
-
 static void mg_bthing_shadow_changed_trigger_cb(void *arg) {
   if (s_ctx.last_change != 0 && mg_bthing_duration_micro(s_ctx.last_change, mgos_uptime_micros()) >= s_ctx.optimize_timeout) {
     // raise the SHADOW_CHANGED event
@@ -70,7 +68,7 @@ static void mg_bthing_shadow_changed_trigger_cb(void *arg) {
 
 bool mgos_bthing_shadow_ignore(mgos_bthing_t thing) {
   const char *key = mgos_bthing_get_id(thing);
-  if (mgos_bvar_has_key(key)) {
+  if (mgos_bvar_has_key(thing, key)) {
     if (mgos_bvar_remove_key(s_ctx.state.full_shadow, key) == NULL) {
       LOG(LL_ERROR, ("Error excluding '%s' state from the full shadow.", key));
       return false;
@@ -85,7 +83,7 @@ bool mgos_bthing_shadow_set(mgos_bvarc_t shadow) {
     mgos_bvarc_t key_val;
     mgos_bvarc_enum_t keys = mgos_bvarc_get_keys(shadow);
     while (mgos_bvarc_get_next_key(&keys, &key_val, &key_name)) {
-      if (mgos_bvar_has_key(key_name)) {
+      if (mgos_bvar_has_key(shadow, key_name)) {
         mgos_bthing_set_state(item->thing, key_val);
       }
     }

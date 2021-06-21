@@ -27,7 +27,7 @@ extern "C" {
 
 #define MGOS_BTHING_SHADOW_EVENT_BASE MGOS_EVENT_BASE('B', 'S', 'W')
 #define MGOS_EV_BTHING_SHADOW_ANY MGOS_BTHING_SHADOW_EVENT_BASE
-enum mgos_bthing_event {
+enum mgos_bthing_shadow_event {
   MGOS_EV_BTHING_SHADOW_CHANGED = MGOS_BTHING_SHADOW_EVENT_BASE,
 };
 
