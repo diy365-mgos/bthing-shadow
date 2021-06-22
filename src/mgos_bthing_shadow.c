@@ -34,9 +34,9 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
 
   if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
     // remove all keys from delta shadow
-    LOG(LL_INFO, ("Removing '%s' from delta-shadow...", key));
+    LOG(LL_INFO, ("Removing all kesy from delta-shadow..."));
     mgos_bvar_remove_keys((mgos_bvar_t)s_ctx.state.delta_shadow);
-    LOG(LL_INFO, ("'%s' removed from delta shadow.", key));
+    LOG(LL_INFO, ("All keys have been removed from delta-shadow."));
   } else {
     s_ctx.last_change = mgos_uptime_micros();
   }
