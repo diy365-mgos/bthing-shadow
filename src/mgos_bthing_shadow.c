@@ -43,7 +43,7 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
   if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state(thing))) {
     LOG(LL_ERROR, ("Error adding '%s' state to the delta shadow.", key));
   } else {
-    LOG(LL_INFO ("'%s' added to delta shadow.", key));
+    LOG(LL_INFO, ("'%s' added to delta shadow.", key));
   }
 
   if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
