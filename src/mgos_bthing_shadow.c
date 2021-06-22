@@ -18,7 +18,7 @@ static struct mg_bthing_shadow_ctx {
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   if (ev == MGOS_EV_BTHING_CREATED) {
     const char *key = mgos_bthing_get_id((mgos_bthing_t)ev_data);
-    if (!mgos_bvar_add_key(s_ctx.state.full_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state((mgos_bthing_t)ev_data))) {
+    if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.full_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state((mgos_bthing_t)ev_data))) {
       LOG(LL_ERROR, ("Error including '%s' state to the full shadow.", key));
     }
   }
@@ -34,13 +34,13 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
 
   if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
     // remove all keys from delta shadow
-    mgos_bvar_remove_keys(s_ctx.state.delta_shadow);
+    mgos_bvar_remove_keys((mgos_bvar_t)s_ctx.state.delta_shadow);
   } else {
     s_ctx.last_change = mgos_uptime_micros();
   }
 
   // add the changed state to the delta shadow
-  if (!mgos_bvar_add_key(s_ctx.state.delta_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state(thing))) {
+  if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state(thing))) {
     LOG(LL_ERROR, ("Error adding '%s' state to the delta shadow.", key));
   }
 
@@ -58,7 +58,7 @@ static void mg_bthing_shadow_changed_trigger_cb(void *arg) {
     // raise the SHADOW_CHANGED event
     mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
     // remove all keys from delta shadow
-    mgos_bvar_remove_keys(s_ctx.state.delta_shadow);
+    mgos_bvar_remove_keys((mgos_bvar_t)s_ctx.state.delta_shadow);
   
     s_ctx.last_change = 0;
   }
@@ -69,7 +69,7 @@ static void mg_bthing_shadow_changed_trigger_cb(void *arg) {
 
 bool mgos_bthing_shadow_ignore(mgos_bthing_t thing) {
   const char *key = mgos_bthing_get_id(thing);
-  if (mgos_bvar_has_key(thing, key)) {
+  if (mgos_bvar_has_key(s_ctx.state.full_shadow, key)) {
     if (mgos_bvar_remove_key((mgos_bvar_t)s_ctx.state.full_shadow, key) == NULL) {
       LOG(LL_ERROR, ("Error excluding '%s' state from the full shadow.", key));
       return false;
