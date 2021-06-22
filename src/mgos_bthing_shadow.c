@@ -34,9 +34,7 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
 
   if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
     // remove all keys from delta shadow
-    LOG(LL_INFO, ("Removing all kesy from delta-shadow..."));
     mgos_bvar_remove_keys((mgos_bvar_t)s_ctx.state.delta_shadow);
-    LOG(LL_INFO, ("All keys have been removed from delta-shadow."));
   } else {
     s_ctx.last_change = mgos_uptime_micros();
   }
@@ -44,8 +42,6 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
   // add the changed state to the delta shadow
   if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state(thing))) {
     LOG(LL_ERROR, ("Error adding '%s' state to the delta shadow.", key));
-  } else {
-    LOG(LL_INFO, ("'%s' added to delta shadow.", key));
   }
 
   if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
