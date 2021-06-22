@@ -2,6 +2,7 @@
 #include "mgos_bthing_shadow.h"
 #include "mgos_bvar_json.h"
 #include "mgos_bvar_dic.h"
+#include "mg_bthing_sdk.h"
 
 #ifdef MGOS_HAVE_MJS
 #include "mjs.h"
@@ -69,7 +70,7 @@ static void mg_bthing_shadow_changed_trigger_cb(void *arg) {
 bool mgos_bthing_shadow_ignore(mgos_bthing_t thing) {
   const char *key = mgos_bthing_get_id(thing);
   if (mgos_bvar_has_key(thing, key)) {
-    if (mgos_bvar_remove_key(s_ctx.state.full_shadow, key) == NULL) {
+    if (mgos_bvar_remove_key((mgos_bvar_t)s_ctx.state.full_shadow, key) == NULL) {
       LOG(LL_ERROR, ("Error excluding '%s' state from the full shadow.", key));
       return false;
     }
@@ -83,9 +84,8 @@ bool mgos_bthing_shadow_set(mgos_bvarc_t shadow) {
     mgos_bvarc_t key_val;
     mgos_bvarc_enum_t keys = mgos_bvarc_get_keys(shadow);
     while (mgos_bvarc_get_next_key(&keys, &key_val, &key_name)) {
-      if (mgos_bvar_has_key(shadow, key_name)) {
-        mgos_bthing_set_state(item->thing, key_val);
-      }
+      mgos_bthing_t thing = mgos_bthing_get(key_name);
+      mgos_bthing_set_state(thing, key_val);
     }
     return true;
   }
@@ -98,7 +98,7 @@ bool mgos_bthing_shadow_set(mgos_bvarc_t shadow) {
 bool mgos_bthing_shadow_json_set(const char *json, int json_len){
   mgos_bvar_t shadow = NULL;
   if (mgos_bvar_json_try_bscanf(json, json_len, &shadow)) {
-    bool ret = mgos_bthing_shadow_set(shadow)
+    bool ret = mgos_bthing_shadow_set(shadow);
     mgos_bvar_free(shadow);
     return ret;
   }
@@ -131,7 +131,7 @@ bool mgos_bthing_shadow_init() {
   }
   
   if (mgos_sys_config_get_bthing_shadow_optimize() && (s_ctx.optimize_timeout > 0)) {
-    s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout),
+    s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout,
       MGOS_TIMER_REPEAT, mg_bthing_shadow_changed_trigger_cb, NULL);
     if (s_ctx.optimize_timer_id  == MGOS_INVALID_TIMER_ID) {
       LOG(LL_DEBUG, ("Warning: unable to start the timer for optimizing MGOS_EV_BTHING_SHADOW_CHANGED events."));

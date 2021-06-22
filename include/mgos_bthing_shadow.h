@@ -32,8 +32,8 @@ enum mgos_bthing_shadow_event {
 };
 
 struct mgos_bthing_shadow_state {
-  mgos_bvar_t full_shadow;
-  mgos_bvar_t delta_shadow;
+  mgos_bvarc_t full_shadow;
+  mgos_bvarc_t delta_shadow;
 };
 
 bool mgos_bthing_shadow_ignore(mgos_bthing_t thing);
