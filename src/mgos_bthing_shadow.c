@@ -45,6 +45,7 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
     // I must flush the queue and raise SHADOW-CHANGED event
     // before moving on
     mg_bthing_shadow_trigger_changed_event(true);
+    LOG(LL_INFO, ("Shadow has been flushed because changing '%s'", mgos_bthing_get_id(arg->thing)));
   }
 }
 
