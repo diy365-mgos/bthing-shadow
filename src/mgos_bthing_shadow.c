@@ -29,7 +29,7 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
 
 static void mg_bthing_shadow_trigger_changed_event(bool force) {
   if (force || (s_ctx.last_change != 0 && 
-      mg_bthing_duration_micro(s_ctx.last_change, mgos_uptime_micros()) >= s_ctx.optimize_timeout)) {
+      (mg_bthing_duration_micro(s_ctx.last_change, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout)) {
     // raise the SHADOW_CHANGED event
     mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
     // remove all keys from delta shadow
@@ -40,13 +40,12 @@ static void mg_bthing_shadow_trigger_changed_event(bool force) {
 
 static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state_changing_arg *arg = (struct mgos_bthing_state_changing_arg *)ev_data;
-  LOG(LL_INFO, ("State changing for '%s'", mgos_bthing_get_id(arg->thing)));
   if (mgos_bvar_has_key(s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing))) {
     // the changed state was already queued into delta-shadow, so
     // I must flush the queue and raise SHADOW-CHANGED event
     // before moving on
     mg_bthing_shadow_trigger_changed_event(true);
-    LOG(LL_INFO, ("Shadow has been flushed because changing '%s'", mgos_bthing_get_id(arg->thing)));
+    LOG(LL_INFO, ("Shadow has been flushed because '%s' is going to change.", mgos_bthing_get_id(arg->thing)));
   }
 }
 
@@ -153,11 +152,13 @@ bool mgos_bthing_shadow_init() {
   if (mgos_sys_config_get_bthing_shadow_optimize() && (s_ctx.optimize_timeout > 0)) {
     s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout,
       MGOS_TIMER_REPEAT, mg_bthing_shadow_changed_trigger_cb, NULL);
-    if (s_ctx.optimize_timer_id  == MGOS_INVALID_TIMER_ID) {
-      LOG(LL_DEBUG, ("Warning: unable to start the timer for optimizing MGOS_EV_BTHING_SHADOW_CHANGED events."));
+    if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
+      LOG(LL_DEBUG, ("Warning: unable to start the Shadow Optimizer."));
     } else {
-      LOG(LL_DEBUG, ("Shadow optimizer timer stared (timeout %dms).", s_ctx.optimize_timeout));
+      LOG(LL_INFO, ("Shadow Optimizer successfully stared (timeout %dms).", s_ctx.optimize_timeout));
     }
+  } else {
+    LOG(LL_DEBUG, ("Shadow Optimizer disabled."));
   }
   #endif //MGOS_BTHING_HAVE_SENSORS
 
