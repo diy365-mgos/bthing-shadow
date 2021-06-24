@@ -45,7 +45,6 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
     // I must flush the queue and raise SHADOW-CHANGED event
     // before moving on
     mg_bthing_shadow_trigger_changed_event(true);
-    LOG(LL_INFO, ("Shadow has been flushed because '%s' is going to change.", mgos_bthing_get_id(arg->thing)));
   }
 }
 
@@ -155,7 +154,7 @@ bool mgos_bthing_shadow_init() {
     if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
       LOG(LL_DEBUG, ("Warning: unable to start the Shadow Optimizer."));
     } else {
-      LOG(LL_INFO, ("Shadow Optimizer successfully stared (timeout %dms).", s_ctx.optimize_timeout));
+      LOG(LL_DEBUG, ("Shadow Optimizer successfully stared (timeout %dms).", s_ctx.optimize_timeout));
     }
   } else {
     LOG(LL_DEBUG, ("Shadow Optimizer disabled."));
