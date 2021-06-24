@@ -40,6 +40,7 @@ static void mg_bthing_shadow_trigger_changed_event(bool force) {
 
 static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state_changing_arg *arg = (struct mgos_bthing_state_changing_arg *)ev_data;
+  LOG(LL_INFO, ("State changing for '%s'", mgos_bthing_get_id(arg->thing)));
   if (mgos_bvar_has_key(s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing))) {
     // the changed state was already queued into delta-shadow, so
     // I must flush the queue and raise SHADOW-CHANGED event
@@ -154,6 +155,8 @@ bool mgos_bthing_shadow_init() {
       MGOS_TIMER_REPEAT, mg_bthing_shadow_changed_trigger_cb, NULL);
     if (s_ctx.optimize_timer_id  == MGOS_INVALID_TIMER_ID) {
       LOG(LL_DEBUG, ("Warning: unable to start the timer for optimizing MGOS_EV_BTHING_SHADOW_CHANGED events."));
+    } else {
+      LOG(LL_DEBUG, ("Shadow optimizer timer stared (timeout %dms).", s_ctx.optimize_timeout));
     }
   }
   #endif //MGOS_BTHING_HAVE_SENSORS
