@@ -49,8 +49,8 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
 }
 
 static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userdata) {  
-  mgos_bthing_t thing = (mgos_bthing_t)ev_data;
-  const char *key = mgos_bthing_get_id(thing);
+  struct mgos_bthing_state_changed_arg *arg = (struct mgos_bthing_state_changed_arg *)ev_data;
+  const char *key = mgos_bthing_get_id(arg->thing);
 
   if (!mgos_bvar_has_key(s_ctx.state.full_shadow, key)) {
     return; // the thing must be ignored
@@ -59,7 +59,7 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
   s_ctx.last_change = mgos_uptime_micros();
 
   // add the changed state to the delta shadow
-  if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state(thing))) {
+  if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state)) {
     LOG(LL_ERROR, ("Error adding '%s' state to the delta shadow.", key));
   }
 
