@@ -17,11 +17,16 @@ static struct mg_bthing_shadow_ctx {
 
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   if (ev == MGOS_EV_BTHING_CREATED) {
+    #if MGOS_BTHING_HAVE_SENSORS
     const char *key = mgos_bthing_get_id((mgos_bthing_t)ev_data);
     if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.full_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state((mgos_bthing_t)ev_data))) {
       LOG(LL_ERROR, ("Error including '%s' state to the full shadow.", key));
     }
+    #else
+    (void) ev_data;
+    #endif
   }
+  
   (void) userdata;
 }
 
@@ -91,6 +96,8 @@ bool mgos_bthing_shadow_ignore(mgos_bthing_t thing) {
   return true;
 }
 
+#if MGOS_BTHING_HAVE_ACTUATORS
+
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow) {
   if (shadow && mgos_bvar_is_dic(shadow)) {
     const char *key_name;
@@ -120,6 +127,7 @@ bool mgos_bthing_shadow_json_set(const char *json, int json_len){
 }
 
 #endif // MGOS_BVAR_HAVE_JSON
+#endif //MGOS_BTHING_HAVE_ACTUATORS
 
 bool mgos_bthing_shadow_init() {
 

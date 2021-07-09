@@ -38,11 +38,14 @@ struct mgos_bthing_shadow_state {
 
 bool mgos_bthing_shadow_ignore(mgos_bthing_t thing);
 
+#if MGOS_BTHING_HAVE_ACTUATORS
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow);
 
 #ifdef MGOS_BVAR_HAVE_JSON
 bool mgos_bthing_shadow_json_set(const char *json, int json_len);
-#endif
+#endif //MGOS_BVAR_HAVE_JSON
+
+#endif // MGOS_BTHING_HAVE_ACTUATORS
 
 #ifdef __cplusplus
 }
