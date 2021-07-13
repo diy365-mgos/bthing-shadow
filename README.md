@@ -38,9 +38,9 @@ Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED` event's handlers (see [mgos
 |--|--|
 |full_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing all states.|
 |delta_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing only changed states.|
-### mgos_bthing_shadow_ignore
+### mgos_bthing_shadow_disable
 ```c
-bool mgos_bthing_shadow_ignore(mgos_bthing_t thing);
+bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
 ```
 Excludes the state of a bThing from the shadow. Returns `true` on success, or `false` otherwise.
 

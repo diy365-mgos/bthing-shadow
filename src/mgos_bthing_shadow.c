@@ -85,7 +85,7 @@ static void mg_bthing_shadow_changed_trigger_cb(void *arg) {
 
 #endif //MGOS_BTHING_HAVE_SENSORS
 
-bool mgos_bthing_shadow_ignore(mgos_bthing_t thing) {
+bool mgos_bthing_shadow_disable(mgos_bthing_t thing) {
   const char *key = mgos_bthing_get_id(thing);
   if (mgos_bvar_has_key(s_ctx.state.full_shadow, key)) {
     if (mgos_bvar_remove_key((mgos_bvar_t)s_ctx.state.full_shadow, key) == NULL) {

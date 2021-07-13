@@ -36,7 +36,7 @@ struct mgos_bthing_shadow_state {
   mgos_bvarc_t delta_shadow;
 };
 
-bool mgos_bthing_shadow_ignore(mgos_bthing_t thing);
+bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
 
 #if MGOS_BTHING_HAVE_ACTUATORS
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow);
