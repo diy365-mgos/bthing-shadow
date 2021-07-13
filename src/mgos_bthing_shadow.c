@@ -131,6 +131,8 @@ bool mgos_bthing_shadow_json_set(const char *json, int json_len){
 
 bool mgos_bthing_shadow_init() {
 
+  if (!mgos_sys_config_get_bthing_shadow_enable()) return true;
+
   // init context
   s_ctx.state.full_shadow = mgos_bvar_new_dic();
   s_ctx.state.delta_shadow = mgos_bvar_new_dic();
