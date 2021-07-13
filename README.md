@@ -5,7 +5,7 @@ Mongoose-OS library for managing [bThings](https://github.com/diy365-mgos/bthing
 - **Observable** - You can detect when one or more states of the shadow change subscribing to the `MGOS_EV_BTHING_SHADOW_CHANGED` event.
 - **Optimized** - You can enable the shadow optimization to prevent the `MGOS_EV_BTHING_SHADOW_CHANGED` event to be triggered on every single state change. When optimization is active, the library trys to collect as much changes as possible triggering  one single `MGOS_EV_BTHING_SHADOW_CHANGED` event.
 ## Configuration
-The bThing Shadow Library adds the `bthing.shadow` section to the device configuration:
+The library adds the `bthing.shadow` section to the device configuration:
 ```javascript
 {
   "enable": true,           // Enable or disable the shadow
