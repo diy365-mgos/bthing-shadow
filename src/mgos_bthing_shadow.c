@@ -100,12 +100,14 @@ bool mgos_bthing_shadow_disable(mgos_bthing_t thing) {
 
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow) {
   if (shadow && mgos_bvar_is_dic(shadow)) {
-    const char *key_name;
+    const char *thing_id;
     mgos_bvarc_t key_val;
     mgos_bvarc_enum_t keys = mgos_bvarc_get_keys(shadow);
-    while (mgos_bvarc_get_next_key(&keys, &key_val, &key_name)) {
-      mgos_bthing_t thing = mgos_bthing_get(key_name);
-      mgos_bthing_set_state(thing, key_val);
+    while (mgos_bvarc_get_next_key(&keys, &key_val, &thing_id)) {
+      if (mgos_bvar_has_key(s_ctx.state.full_shadow, thing_id)) {
+        mgos_bthing_t thing = mgos_bthing_get(thing_id);
+        mgos_bthing_set_state(thing, key_val);
+      }
     }
     return true;
   }
