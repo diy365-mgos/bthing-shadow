@@ -21,8 +21,8 @@ filesystem:
 config_schema:
   - ["bthing.shadow", "o", {title: "bThing shadow settings"}]
   - ["bthing.shadow.optimize", "b", false, {title: "Optimize shadow collecting us much changes as possibles in one single change"}]
-  - ["bthing.shadow.optimize_timeout", "i", 100, {title: "The optimize timeout, in milliseconds"}]
-  - ["bthing.shadow.enable", "b", true, {title: "Enable or disable shadows"}]
+  - ["bthing.shadow.optimize_timeout", "i", 100, {title: "The timeout, in milliseconds, to use for collecting changes"}]
+  - ["bthing.shadow.enable", "b", true, {title: "Enable or disable the shadow"}]
 
 libs:
   - origin: https://github.com/diy365-mgos/bthing
