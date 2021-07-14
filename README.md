@@ -9,7 +9,7 @@ The library adds the `bthing.shadow` section to the device configuration:
 ```javascript
 {
   "enable": true,           // Enable or disable the shadow
-  "optimize": false,        // Optimize shadow collecting us much changes as possibles in one single change
+  "optimize": true,        // Optimize shadow collecting us much changes as possibles in one single change
   "optimize_timeout": 100,  // The timeout, in milliseconds, to use for collecting changes
 }
 ```
