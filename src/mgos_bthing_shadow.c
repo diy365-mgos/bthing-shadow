@@ -49,9 +49,9 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
     // the changed state was already queued into delta-shadow, so
     // I must flush the queue and raise SHADOW-CHANGED event
     // before moving on
-    LOG(LL_INFO, ("DOUBLE CHANGE DETECTED, PUBLISHING..."));
+    LOG(LL_INFO, ("DOUBLE CHANGE DETECTED, NOTIFYING..."));
     mg_bthing_shadow_trigger_changed_event(true);
-    LOG(LL_INFO, ("DOUBLE CHANGE DETECTED, PUBLISHED."));
+    LOG(LL_INFO, ("DOUBLE CHANGE NOTIFYING DONE."));
   }
 }
 
