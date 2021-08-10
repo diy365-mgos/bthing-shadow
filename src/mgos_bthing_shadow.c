@@ -44,17 +44,20 @@ static void mg_bthing_shadow_trigger_changed_event(bool force) {
 }
 
 static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *userdata) {
-  struct mgos_bthing_state_changing_arg *arg = (struct mgos_bthing_state_changing_arg *)ev_data;
+  struct mgos_bthing_state_change *arg = (struct mgos_bthing_state_change *)ev_data;
   if (mgos_bvar_has_key(s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing))) {
     // the changed state was already queued into delta-shadow, so
     // I must flush the queue and raise SHADOW-CHANGED event
     // before moving on
     mg_bthing_shadow_trigger_changed_event(true);
   }
+
+  (void) userdata;
+  (void) ev;
 }
 
 static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userdata) {  
-  struct mgos_bthing_state_changed_arg *arg = (struct mgos_bthing_state_changed_arg *)ev_data;
+  struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
   const char *key = mgos_bthing_get_id(arg->thing);
 
   if (!mgos_bvar_has_key(s_ctx.state.full_shadow, key)) {
@@ -74,6 +77,14 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
     mg_bthing_shadow_trigger_changed_event(true);
   }
 
+  (void) userdata;
+  (void) ev;
+}
+
+static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
+  struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
+
+  (void) arg;
   (void) userdata;
   (void) ev;
 }
@@ -157,6 +168,11 @@ bool mgos_bthing_shadow_init() {
 
   if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGED, mg_bthing_shadow_on_state_changed, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGED handler."));
+    return false;
+  }
+
+  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_UPDATED, mg_bthing_shadow_on_state_updated, NULL)) {
+    LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_UPDATED handler."));
     return false;
   }
   
