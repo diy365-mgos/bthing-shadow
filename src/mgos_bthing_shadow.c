@@ -35,24 +35,6 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
 
 #if MGOS_BTHING_HAVE_SENSORS
 
-static void mg_bthing_shadow_multiupdate_timer_cb(void *arg) {
-   if (s_ctx.state.is_changed) {
-    // Meantime a bThing state was chenged, so the function
-    // mg_bthing_shadow_trigger_events() is going 
-    // to be invoke. Stop the timer.
-    mgos_clear_timer(s_ctx.optimize_timer_id);
-  } else if (s_ctx.last_update != 0 &&
-      (mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout) {
-    // The timeout for optimizing/collecting multiple 
-    // STATE_UPDATED events was reached.
-    // Trigger events and stop the timer.
-    mg_bthing_shadow_trigger_events(true);
-    mgos_clear_timer(s_ctx.optimize_timer_id);
-  }
-
-  (void) arg;
-}
-
 static int mg_bthing_start_optimize_timer(timer_callback cb) {
   if (s_ctx.optimize_timer_id != MGOS_INVALID_TIMER_ID) return s_ctx.optimize_timer_id;
   if (s_ctx.optimize_timeout > 0) {
@@ -79,6 +61,24 @@ static void mg_bthing_shadow_trigger_events(bool force) {
     s_ctx.state.is_changed = false;
     s_ctx.last_update = 0;
   }
+}
+
+static void mg_bthing_shadow_multiupdate_timer_cb(void *arg) {
+   if (s_ctx.state.is_changed) {
+    // Meantime a bThing state was chenged, so the function
+    // mg_bthing_shadow_trigger_events() is going 
+    // to be invoke. Stop the timer.
+    mgos_clear_timer(s_ctx.optimize_timer_id);
+  } else if (s_ctx.last_update != 0 &&
+      (mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout) {
+    // The timeout for optimizing/collecting multiple 
+    // STATE_UPDATED events was reached.
+    // Trigger events and stop the timer.
+    mg_bthing_shadow_trigger_events(true);
+    mgos_clear_timer(s_ctx.optimize_timer_id);
+  }
+
+  (void) arg;
 }
 
 static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *userdata) {
@@ -110,7 +110,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
     mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state);
   }
 
-  if (!s_ctx.state.optimize_enabled) {
+  if (!s_ctx.optimize_enabled) {
     // optimization is OFF
     if (!s_ctx.state.is_changed) {
       // There is no state's change, so I try to optimize/collect
@@ -219,7 +219,7 @@ bool mgos_bthing_shadow_init() {
     return false;
   }
   
-  if (s_ctx.state.optimize_enabled) {
+  if (s_ctx.optimize_enabled) {
     if (mg_bthing_start_optimize_timer(mg_bthing_shadow_optimize_timer_cb) == MGOS_INVALID_TIMER_ID) {
       LOG(LL_DEBUG, ("Warning: unable to start the Shadow Optimizer."));
     } else {
