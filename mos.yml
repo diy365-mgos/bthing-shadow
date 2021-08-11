@@ -21,7 +21,7 @@ filesystem:
 config_schema:
   - ["bthing.shadow", "o", {title: "bThing shadow settings"}]
   - ["bthing.shadow.optimize", "b", true, {title: "Optimize shadow collecting us much changes as possibles in one single change"}]
-  - ["bthing.shadow.optimize_timeout", "i", 50, {title: "The timeout, in milliseconds, to use for optimizing changes"}]
+  - ["bthing.shadow.optimize_timeout", "i", 100, {title: "The timeout, in milliseconds, to use for optimizing changes"}]
   - ["bthing.shadow.enable", "b", true, {title: "Enable or disable the shadow"}]
 
 libs:
