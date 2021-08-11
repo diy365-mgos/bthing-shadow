@@ -12,7 +12,7 @@ static struct mg_bthing_shadow_ctx {
   struct mgos_bthing_shadow_state state;
   int optimize_timer_id;
   int optimize_timeout; 
-  int64_t last_change; 
+  int64_t last_update; 
 } s_ctx;
 
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
@@ -32,14 +32,23 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
 
 #if MGOS_BTHING_HAVE_SENSORS
 
-static void mg_bthing_shadow_trigger_changed_event(bool force) {
-  if (force || (s_ctx.last_change != 0 && 
-      (mg_bthing_duration_micro(s_ctx.last_change, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout)) {
-    // raise the SHADOW_CHANGED event
-    mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
+static void mg_bthing_shadow_trigger_events(bool force) {
+  if (force || (s_ctx.last_update != 0 && 
+      (mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout)) {
+    
+    if (s_ctx.state.is_changed) {
+      // raise the SHADOW_CHANGED event
+      mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
+    }
+
+    // raise the SHADOW_UPDATED event
+    mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
+
     // remove all keys from delta shadow
     mgos_bvar_remove_keys((mgos_bvar_t)s_ctx.state.delta_shadow);
-    s_ctx.last_change = 0;
+
+    s_ctx.state.is_changed = false;
+    s_ctx.last_update = 0;
   }
 }
 
@@ -47,34 +56,8 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
   struct mgos_bthing_state_change *arg = (struct mgos_bthing_state_change *)ev_data;
   if (mgos_bvar_has_key(s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing))) {
     // the changed state was already queued into delta-shadow, so
-    // I must flush the queue and raise SHADOW-CHANGED event
-    // before moving on
-    mg_bthing_shadow_trigger_changed_event(true);
-  }
-
-  (void) userdata;
-  (void) ev;
-}
-
-static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userdata) {  
-  struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
-  const char *key = mgos_bthing_get_id(arg->thing);
-
-  if (!mgos_bvar_has_key(s_ctx.state.full_shadow, key)) {
-    return; // the thing must be ignored
-  }
-
-  s_ctx.last_change = mgos_uptime_micros();
-
-  // add the changed state to the delta shadow
-  if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state)) {
-    LOG(LL_ERROR, ("Error adding '%s' state to the delta shadow.", key));
-  }
-
-  if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
-    // raise the SHADOW_CHANGED event here because
-    // the optimization is turned off
-    mg_bthing_shadow_trigger_changed_event(true);
+    // I must flush the queue and trigger events before moving on
+    mg_bthing_shadow_trigger_events(true);
   }
 
   (void) userdata;
@@ -83,6 +66,25 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
 
 static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
+  
+  // check if the bThing must be ignored or not...
+  const char *key = mgos_bthing_get_id(arg->thing);
+  if (!mgos_bvar_has_key(s_ctx.state.full_shadow, key)) {
+    return; // the bThing must be ignored
+  }
+
+  s_ctx.last_update = mgos_uptime_micros();
+
+  // check if the state is changed
+  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+    s_ctx.state.is_changed = true;
+    mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state);
+  }
+
+  if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
+    // optimization is OFF, so I trigger events immediately
+    mg_bthing_shadow_trigger_events(true);
+  }
 
   (void) arg;
   (void) userdata;
@@ -90,7 +92,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
 }
 
 static void mg_bthing_shadow_changed_trigger_cb(void *arg) {
-  mg_bthing_shadow_trigger_changed_event(false);
+  mg_bthing_shadow_trigger_events(false);
   (void) arg;
 }
 
@@ -150,7 +152,7 @@ bool mgos_bthing_shadow_init() {
   s_ctx.state.full_shadow = mgos_bvar_new_dic();
   s_ctx.state.delta_shadow = mgos_bvar_new_dic();
   s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
-  s_ctx.last_change = 0;
+  s_ctx.last_update = 0;
   s_ctx.optimize_timeout = mgos_sys_config_get_bthing_shadow_optimize_timeout();
 
   if (!mgos_event_register_base(MGOS_BTHING_SHADOW_EVENT_BASE, "bThing Shadow events")) return false;
@@ -163,11 +165,6 @@ bool mgos_bthing_shadow_init() {
   #if MGOS_BTHING_HAVE_SENSORS
   if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGING, mg_bthing_shadow_on_state_changing, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGING handler."));
-    return false;
-  }
-
-  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGED, mg_bthing_shadow_on_state_changed, NULL)) {
-    LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGED handler."));
     return false;
   }
 
