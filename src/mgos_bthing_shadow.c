@@ -194,7 +194,7 @@ bool mgos_bthing_shadow_init() {
   // init context
   s_ctx.state.full_shadow = mgos_bvar_new_dic();
   s_ctx.state.delta_shadow = mgos_bvar_new_dic();
-  s_ctx.state.optimize_enabled = mgos_sys_config_get_bthing_shadow_optimize();
+  s_ctx.optimize_enabled = mgos_sys_config_get_bthing_shadow_optimize();
   s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
   s_ctx.last_update = 0;
   s_ctx.optimize_timeout = mgos_sys_config_get_bthing_shadow_optimize_timeout();
