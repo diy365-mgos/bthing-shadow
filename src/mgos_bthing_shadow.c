@@ -111,7 +111,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;
 
   if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED ||
-      (s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) == MGOS_BTHING_STATE_FLAG_UPD_REQUESTED)) {
+      (s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) == MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) {
     mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state);
   }
 
