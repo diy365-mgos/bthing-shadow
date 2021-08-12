@@ -145,7 +145,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
 
-  mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state);
+  mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing), (mgos_bvar_t)arg->state);
 
   if (!s_ctx.optimize_enabled) {
     // optimization is OFF, I must try to collect multiple 
