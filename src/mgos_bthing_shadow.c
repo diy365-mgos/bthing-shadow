@@ -104,7 +104,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
 
   s_ctx.last_update = mgos_uptime_micros();
 
-  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) == MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) {
+  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) == MGOS_BTHING_STATE_FLAG_UPD_REQUESTED)
     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPD_REQUESTED;
 
   // check if the state is changed
