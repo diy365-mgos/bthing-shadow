@@ -32,7 +32,7 @@ Events triggered by a shadow state. Use [mgos_event_add_handler()](https://mongo
 struct mgos_bthing_shadow_state {
   mgos_bvarc_t full_shadow;
   mgos_bvarc_t delta_shadow;
-  bool is_changed;
+  enum mgos_bthing_state_flag state_flags;
 };
 ```
 Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED` and `MGOS_EV_BTHING_SHADOW_UPDATED` event's handlers (see [mgos_event_handler_t](https://mongoose-os.com/docs/mongoose-os/api/core/mgos_event.h.md#mgos_event_handler_t)).
@@ -41,7 +41,7 @@ Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED` and `MGOS_EV_BTHING_SHADOW_
 |--|--|
 |full_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing all states.|
 |delta_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing only changed states.|
-|is_changed|`true` if the shadow was changed.|
+|state_flags|Shadow state flags. It could be a combination of more flags (see [mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#enum-mgos_bthing_state_flag)). Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
 ### mgos_bthing_shadow_disable
 ```c
 bool mgos_bthing_shadow_disable(mgos_bthing_t thing);

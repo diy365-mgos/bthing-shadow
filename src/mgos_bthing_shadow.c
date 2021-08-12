@@ -47,7 +47,7 @@ static void mg_bthing_shadow_trigger_events(bool force) {
   if (force || (s_ctx.last_update != 0 && 
       (mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout)) {
     
-    if (s_ctx.state.is_changed) {
+    if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
       // raise the SHADOW_CHANGED event
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
     }
@@ -58,13 +58,13 @@ static void mg_bthing_shadow_trigger_events(bool force) {
     // remove all keys from delta shadow
     mgos_bvar_remove_keys((mgos_bvar_t)s_ctx.state.delta_shadow);
 
-    s_ctx.state.is_changed = false;
+    s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
     s_ctx.last_update = 0;
   }
 }
 
 static void mg_bthing_shadow_multiupdate_timer_cb(void *arg) {
-   if (s_ctx.state.is_changed) {
+   if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED){
     // Meantime a bThing state was chenged, so the function
     // mg_bthing_shadow_trigger_events() is going 
     // to be invoke. Stop the timer.
@@ -103,17 +103,19 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
   }
 
   s_ctx.last_update = mgos_uptime_micros();
-  LOG(LL_INFO, ("Shadow has been UPDATED.")); // CANCEL
+
+  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) == MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) {
+    s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPD_REQUESTED;
 
   // check if the state is changed
   if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
-    s_ctx.state.is_changed = true;
+    s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;
     mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state);
   }
 
   if (!s_ctx.optimize_enabled) {
     // optimization is OFF
-    if (!s_ctx.state.is_changed) {
+    if (((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) != MGOS_BTHING_STATE_FLAG_CHANGED)) {
       // There is no state's change, so I try to optimize/collect
       // multiple STATE_UPDATED events into one single event.
       if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
@@ -195,6 +197,7 @@ bool mgos_bthing_shadow_init() {
   // init context
   s_ctx.state.full_shadow = mgos_bvar_new_dic();
   s_ctx.state.delta_shadow = mgos_bvar_new_dic();
+  s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
   s_ctx.optimize_enabled = mgos_sys_config_get_bthing_shadow_optimize();
   s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
   s_ctx.last_update = 0;
