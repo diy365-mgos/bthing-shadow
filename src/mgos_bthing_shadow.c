@@ -35,7 +35,12 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
 
 #if MGOS_BTHING_HAVE_SENSORS
 
-static int mg_bthing_start_optimize_timer(timer_callback cb) {
+bool mg_bthing_shadow_optimize_timeout_reached() {
+  return ((s_ctx.last_update != 0 &&
+         (mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
+}
+
+static int mg_bthing_shadow_start_optimize_timer(timer_callback cb) {
   if (s_ctx.optimize_timer_id != MGOS_INVALID_TIMER_ID) return s_ctx.optimize_timer_id;
   if (s_ctx.optimize_timeout > 0) {
     s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout, MGOS_TIMER_REPEAT, cb, NULL);
@@ -43,9 +48,8 @@ static int mg_bthing_start_optimize_timer(timer_callback cb) {
   return s_ctx.optimize_timer_id;
 }
 
-static void mg_bthing_shadow_trigger_events(bool force) {
-  if (force || (s_ctx.last_update != 0 && 
-      (mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout)) {
+static bool mg_bthing_shadow_trigger_events(bool force) {
+  if (force || mg_bthing_shadow_optimize_timeout_reached()) {
     
     if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
       // raise the SHADOW_CHANGED event
@@ -60,21 +64,24 @@ static void mg_bthing_shadow_trigger_events(bool force) {
 
     s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
     s_ctx.last_update = 0;
+    return true;
   }
+  return false;
 }
 
 static void mg_bthing_shadow_multiupdate_timer_cb(void *arg) {
+  LOG(LL_INFO, ("INFO: entering into mg_bthing_shadow_multiupdate_timer_cb()...")); // CANCEL
    if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED){
     // Meantime a bThing state was chenged, so the function
     // mg_bthing_shadow_trigger_events() is going 
     // to be invoke. Stop the timer.
     mgos_clear_timer(s_ctx.optimize_timer_id);
-  } else if (s_ctx.last_update != 0 &&
-      (mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout) {
+    LOG(LL_INFO, ("WARN: multiupdate_timer aborted because a change.")); // CANCEL
+  } else if (mg_bthing_shadow_trigger_events(false)) {
     // The timeout for optimizing/collecting multiple 
     // STATE_UPDATED events was reached.
     // Trigger events and stop the timer.
-    mg_bthing_shadow_trigger_events(true);
+    LOG(LL_INFO, ("INFO: multiupdate_timer aborted because events have been triggered.")); // CANCEL
     mgos_clear_timer(s_ctx.optimize_timer_id);
   }
 
@@ -120,12 +127,10 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
     if (((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) != MGOS_BTHING_STATE_FLAG_CHANGED)) {
       // There is no state's change, so I try to optimize/collect
       // multiple STATE_UPDATED events into one single event.
-      if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
-        if (mg_bthing_start_optimize_timer(mg_bthing_shadow_multiupdate_timer_cb) != MGOS_INVALID_TIMER_ID) {
-          // The timer for optimizing/collecting multiple 
-          // STATE_UPDATED is started. Nothing to do.
-          return;
-        }
+      if (mg_bthing_shadow_start_optimize_timer(mg_bthing_shadow_multiupdate_timer_cb) != MGOS_INVALID_TIMER_ID) {
+        // The timer for optimizing/collecting multiple 
+        // STATE_UPDATED is started. Nothing to do.
+        return;
       }
     }
     // A bThing state is changed, or the timer for 
@@ -226,7 +231,7 @@ bool mgos_bthing_shadow_init() {
   }
   
   if (s_ctx.optimize_enabled) {
-    if (mg_bthing_start_optimize_timer(mg_bthing_shadow_optimize_timer_cb) == MGOS_INVALID_TIMER_ID) {
+    if (mg_bthing_shadow_start_optimize_timer(mg_bthing_shadow_optimize_timer_cb) == MGOS_INVALID_TIMER_ID) {
       LOG(LL_DEBUG, ("Warning: unable to start the Shadow Optimizer."));
     } else {
       LOG(LL_DEBUG, ("Shadow Optimizer successfully stared (timeout %dms).", s_ctx.optimize_timeout));
