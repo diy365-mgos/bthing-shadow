@@ -83,22 +83,18 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
 }
 
 static void mg_bthing_shadow_multiupdate_timer_cb(void *arg) {
-  LOG(LL_INFO, ("INFO: entering into mg_bthing_shadow_multiupdate_timer_cb()...")); // CANCEL
   if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED ||
-      s_ctx.state.state_flags == MGOS_BTHING_STATE_FLAG_UNCHANGED){
+      s_ctx.state.state_flags == MGOS_BTHING_STATE_FLAG_UNCHANGED) {
     // A bThing state was chenged, so the function
     // mg_bthing_shadow_trigger_events() is going to be invoked. or
     // there are no changes to trigger. Anyway, I stop the timer.
     mg_bthing_shadow_clear_optimize_timer();
-    LOG(LL_INFO, ("WARN: multiupdate_timer aborted because a change.")); // CANCEL
   } else if (mg_bthing_shadow_trigger_events(false)) {
     // The timeout for optimizing/collecting multiple 
     // STATE_UPDATED events was reached.
     // Trigger events and stop the timer.
     mg_bthing_shadow_clear_optimize_timer();
-    LOG(LL_INFO, ("INFO: multiupdate_timer aborted because events have been triggered.")); // CANCEL
   }
-
   (void) arg;
 }
 
