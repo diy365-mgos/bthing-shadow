@@ -103,6 +103,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
   }
 
   s_ctx.last_update = mgos_uptime_micros();
+  LOG(LL_INFO, ("Shadow has been UPDATED.")); // CANCEL
 
   // check if the state is changed
   if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
