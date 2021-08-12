@@ -33,7 +33,9 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   (void) userdata;
 }
 
-#if MGOS_BTHING_HAVE_SENSORS
+bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
+  return !mgos_bvar_has_key(s_ctx.state.full_shadow, mgos_bthing_get_id(thing));
+}
 
 bool mg_bthing_shadow_optimize_timeout_reached() {
   return ((s_ctx.last_update != 0 &&
@@ -55,6 +57,8 @@ static void mg_bthing_shadow_clear_optimize_timer() {
   }
 }
 
+#if MGOS_BTHING_HAVE_SENSORS
+
 static bool mg_bthing_shadow_trigger_events(bool force) {
   if (force || mg_bthing_shadow_optimize_timeout_reached()) {
     
@@ -63,9 +67,10 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
     }
 
-    // raise the SHADOW_UPDATED event
-    s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
-    mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
+    if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_UPDATED) == MGOS_BTHING_STATE_FLAG_UPDATED) {
+      // raise the SHADOW_UPDATED event
+      mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
+    }
 
     // remove all keys from delta shadow
     mgos_bvar_remove_keys((mgos_bvar_t)s_ctx.state.delta_shadow);
@@ -109,45 +114,48 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
   (void) ev;
 }
 
-static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
+static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
   
-  // check if the bThing must be ignored or not...
-  const char *key = mgos_bthing_get_id(arg->thing);
-  if (!mgos_bvar_has_key(s_ctx.state.full_shadow, key)) {
+  if (mg_bthing_shadow_must_ignore_item(arg->thing))
     return; // the bThing must be ignored
-  }
 
   s_ctx.last_update = mgos_uptime_micros();
+  s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
 
-  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) == MGOS_BTHING_STATE_FLAG_UPD_REQUESTED)
-    s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPD_REQUESTED;
-  
-  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED)
-    s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
-
-  if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED ||
-      (s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) == MGOS_BTHING_STATE_FLAG_UPD_REQUESTED) {
-    mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state);
-  }
+  mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing), (mgos_bvar_t)arg->state);
 
   if (!s_ctx.optimize_enabled) {
-    // optimization is OFF
-    if (((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) != MGOS_BTHING_STATE_FLAG_CHANGED)) {
-      s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
-      // There is no state's change, so I try to optimize/collect
-      // multiple STATE_UPDATED events into one single event.
-      LOG(LL_INFO, ("INFO: multiupdate detected...")); // CANCEL
-      if (mg_bthing_shadow_start_optimize_timer(mg_bthing_shadow_multiupdate_timer_cb) != MGOS_INVALID_TIMER_ID) {
-        LOG(LL_INFO, ("managing in into the timer.")); // CANCEL
-        // The timer for optimizing/collecting multiple 
-        // STATE_UPDATED is started. Nothing to do.
-        return;
-      }
+    // optimization is OFF, I must trigger events immediately
+    mg_bthing_shadow_trigger_events(true);
+  }
+
+  (void) userdata;
+  (void) ev;
+}
+
+static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
+  struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
+
+  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED)
+    return; // already managed in mg_bthing_shadow_on_state_changed()
+  if (mg_bthing_shadow_must_ignore_item(arg->thing))
+    return; // the bThing must be ignored
+
+  s_ctx.last_update = mgos_uptime_micros();
+  s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
+
+  mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, key, (mgos_bvar_t)arg->state);
+
+  if (!s_ctx.optimize_enabled) {
+    // optimization is OFF, I must try to collect multiple 
+    // STATE_UPDATED event into a single one.
+    if (mg_bthing_shadow_start_optimize_timer(mg_bthing_shadow_multiupdate_timer_cb) != MGOS_INVALID_TIMER_ID) {
+      // The timer for collecting multiple STATE_UPDATED is started. Nothing to do.
+      return;
     }
-    // A bThing state is changed, or the timer for 
-    // optimizing/collecting multiple STATE_UPDATED
-    // failed to start. I trigger events immediately
+    // The timer for collecting multiple STATE_UPDATED failed to start.
+    // I must trigger events immediately.
     mg_bthing_shadow_trigger_events(true);
   }
 
@@ -234,6 +242,11 @@ bool mgos_bthing_shadow_init() {
   #if MGOS_BTHING_HAVE_SENSORS
   if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGING, mg_bthing_shadow_on_state_changing, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGING handler."));
+    return false;
+  }
+
+  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGED, mg_bthing_shadow_on_state_changed, NULL)) {
+    LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGED handler."));
     return false;
   }
 
