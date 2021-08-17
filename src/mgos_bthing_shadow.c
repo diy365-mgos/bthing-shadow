@@ -61,8 +61,9 @@ void mg_bthing_shadow_empty(mgos_bvar_t shadow) {
   const char *key_name;
   mgos_bvar_enum_t keys = mgos_bvar_get_keys(shadow);
   while (mgos_bvar_get_next_key(&keys, &key_value, &key_name)) {
+    mgos_bthing_enum_t things = mgos_bthing_get_all();
     if (mgos_bvar_is_dic(key_value) &&
-        mgos_bthing_filter_get_next(&mgos_bthing_get_all(), NULL, MGOS_BTHING_FILTER_BY_DOMAIN, key_name)) {
+        mgos_bthing_filter_get_next(&things, NULL, MGOS_BTHING_FILTER_BY_DOMAIN, key_name)) {
       // the shadow key a domain dictionary, so I must...
       // remove all keys (all the the bThing states), and
       mgos_bvar_remove_keys(key_value);
