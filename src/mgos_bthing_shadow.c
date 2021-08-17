@@ -18,13 +18,70 @@ static struct mg_bthing_shadow_ctx {
   int64_t last_update;
 } s_ctx;
 
+#if MGOS_BTHING_HAVE_SENSORS
+
+bool mg_bthing_shadow_add_state(mgos_bvar_t shadow, mgos_bthing_t thing) {
+  const char *dom = mgos_bthing_get_domain(thing);
+  mgos_bvar_t dic = shadow;
+  if (dom) {
+    if (!mgos_bvar_try_get_key(shadow, dom, &dic)) {
+      // create the domain dictionary
+      dic = mgos_bvar_new_dic();
+      if (!mgos_bvar_add_key(shadow, dom, dic)) {
+        mgos_bvar_free(dic);
+        return false;
+      }
+    }
+  }
+  return mgos_bvar_add_key(dic, mgos_bthing_get_id(thing), (mgos_bvar_t)mg_bthing_get_raw_state(thing));
+}
+
+mgos_bvar_t mg_bthing_shadow_get_state(mgos_bvarc_t shadow, mgos_bthing_t thing) {
+  const char *dom = mgos_bthing_get_domain(thing);
+  mgos_bvar_t dic = shadow;
+  if (dom) {
+    if (!mgos_bvar_try_get_key(shadow, dom, &dic)) return NULL;
+  }
+  return mgos_bvar_get_key(dic, mgos_bthing_get_id(thing));
+}
+
+void mg_bthing_shadow_remove_state(mgos_bvar_t shadow, mgos_bthing_t thing) {
+  const char *dom = mgos_bthing_get_domain(thing);
+  mgos_bvar_t dic = shadow;
+  if (dom) {
+    if (!mgos_bvar_try_get_key(shadow, dom, &dic)) return true;
+  }
+  mgos_bvar_remove_key(dic, mgos_bthing_get_id(thing));
+  if (dic != shadow && mgos_bvar_length(dic) == 0)
+    mgos_bvar_free(dic); // delete empty domain dictionary
+}
+
+void mg_bthing_shadow_empty(mgos_bvar_t shadow) {
+  mgos_bvar_t key_value;
+  const char *key_name;
+  mgos_bvar_enum_t keys = mgos_bvar_get_keys(shadow);
+  while (mgos_bvar_get_next_key(&keys, &key_value, &key_name)) {
+    if (mgos_bvar_is_dic(key_value) &&
+        mgos_bthing_filter_get_next(&mgos_bthing_get_all(), NULL, MGOS_BTHING_FILTER_BY_DOMAIN, key_name)) {
+      // the shadow key a domain dictionary, so I must...
+      // remove all keys (all the the bThing states), and
+      mgos_bvar_remove_keys(key_value);
+      // delete the (empty) domain dictionary.
+      mgos_bvar_delete_key(shadow, key_name);
+    } else {
+      // the shadow key is the bThing state, so
+      // I just have to remove it.
+      mgos_bvar_remove_key(shadow, key_name);
+    }
+  }
+}
+
+#endif // MGOS_BTHING_HAVE_SENSORS
+
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   if (ev == MGOS_EV_BTHING_CREATED) {
     #if MGOS_BTHING_HAVE_SENSORS
-    const char *key = mgos_bthing_get_id((mgos_bthing_t)ev_data);
-    if (!mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.full_shadow, key, (mgos_bvar_t)mg_bthing_get_raw_state((mgos_bthing_t)ev_data))) {
-      LOG(LL_ERROR, ("Error including '%s' state to the full shadow.", key));
-    }
+    mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data));
     #else
     (void) ev_data;
     #endif
@@ -34,7 +91,7 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
 }
 
 bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
-  return !mgos_bvar_has_key(s_ctx.state.full_shadow, mgos_bthing_get_id(thing));
+  return (mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing) == NULL);
 }
 
 bool mg_bthing_shadow_optimize_timeout_reached() {
@@ -73,7 +130,7 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
     }
 
     // remove all keys from delta shadow
-    mgos_bvar_remove_keys((mgos_bvar_t)s_ctx.state.delta_shadow);
+    mg_bthing_shadow_empty((mgos_bvar_t)s_ctx.state.delta_shadow);
 
     s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
     s_ctx.last_update = 0;
@@ -100,7 +157,7 @@ static void mg_bthing_shadow_multiupdate_timer_cb(void *arg) {
 
 static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state_change *arg = (struct mgos_bthing_state_change *)ev_data;
-  if (mgos_bvar_has_key(s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing))) {
+  if (mg_bthing_shadow_get_state(s_ctx.state.delta_shadow, arg->thing) != NULL) {
     // the changed state was already queued into delta-shadow, so
     // I must flush the queue and trigger events before moving on
     mg_bthing_shadow_trigger_events(true);
@@ -119,7 +176,7 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
 
-  mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing), (mgos_bvar_t)arg->state);
+  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, (mgos_bvar_t)arg->state);
 
   if (!s_ctx.optimize_enabled) {
     // optimization is OFF, I must trigger events immediately
@@ -141,7 +198,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
 
-  mgos_bvar_add_key((mgos_bvar_t)s_ctx.state.delta_shadow, mgos_bthing_get_id(arg->thing), (mgos_bvar_t)arg->state);
+  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, (mgos_bvar_t)arg->state);
 
   if (!s_ctx.optimize_enabled) {
     // optimization is OFF, I must try to collect multiple 
@@ -168,13 +225,7 @@ static void mg_bthing_shadow_optimize_timer_cb(void *arg) {
 #endif //MGOS_BTHING_HAVE_SENSORS
 
 bool mgos_bthing_shadow_disable(mgos_bthing_t thing) {
-  const char *key = mgos_bthing_get_id(thing);
-  if (mgos_bvar_has_key(s_ctx.state.full_shadow, key)) {
-    if (mgos_bvar_remove_key((mgos_bvar_t)s_ctx.state.full_shadow, key) == NULL) {
-      LOG(LL_ERROR, ("Error excluding '%s' state from the full shadow.", key));
-      return false;
-    }
-  }
+  mg_bthing_shadow_remove_state(s_ctx.state.full_shadow, thing);
   return true;
 }
 
@@ -182,13 +233,15 @@ bool mgos_bthing_shadow_disable(mgos_bthing_t thing) {
 
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow) {
   if (shadow && mgos_bvar_is_dic(shadow)) {
-    const char *thing_id;
-    mgos_bvarc_t key_val;
-    mgos_bvarc_enum_t keys = mgos_bvarc_get_keys(shadow);
-    while (mgos_bvarc_get_next_key(&keys, &key_val, &thing_id)) {
-      if (mgos_bvar_has_key(s_ctx.state.full_shadow, thing_id)) {
-        mgos_bthing_t thing = mgos_bthing_get(thing_id);
-        mgos_bthing_set_state(thing, key_val);
+
+    mgos_bthing_enum_t things = mgos_bthing_get_all();
+    mgos_bthing_t thing;
+    while (mgos_bthing_get_next(&things, &thing)) {
+      if (mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing)) {
+        // the bThing enabled for shadow
+        mgos_bvar_t state = mg_bthing_shadow_get_state(shadow, thing);
+        if (state)
+          mgos_bthing_set_state(thing, state);
       }
     }
     return true;
