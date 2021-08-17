@@ -82,7 +82,10 @@ void mg_bthing_shadow_empty(mgos_bvar_t shadow) {
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   if (ev == MGOS_EV_BTHING_CREATED) {
     #if MGOS_BTHING_HAVE_SENSORS
-    mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data);
+    if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data)) {
+      LOG(LL_ERROR, ("Something went wrong adding '%s' state to  full-shadow.",
+        mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
+    }
     #else
     (void) ev_data;
     #endif
@@ -123,11 +126,13 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
     if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
       // raise the SHADOW_CHANGED event
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
+      LOG(LL_INFO, ("MGOS_EV_BTHING_SHADOW_CHANGED triggered")); // CANCEL
     }
 
     if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_UPDATED) == MGOS_BTHING_STATE_FLAG_UPDATED) {
       // raise the SHADOW_UPDATED event
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
+      LOG(LL_INFO, ("MGOS_EV_BTHING_SHADOW_UPDATED triggered")); // CANCEL
     }
 
     // remove all keys from delta shadow
@@ -137,6 +142,7 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
     s_ctx.last_update = 0;
     return true;
   }
+  LOG(LL_INFO, ("NO events triggered")); // CANCEL
   return false;
 }
 
@@ -171,13 +177,18 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
 static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
   
-  if (mg_bthing_shadow_must_ignore_item(arg->thing))
+  if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
+    LOG(LL_INFO, ("bThing ignored #1!")); // CANCEL
     return; // the bThing must be ignored
+  }
 
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
 
-  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing);
+  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing) {
+    LOG(LL_ERROR, ("Something went wrong adding '%s' state to  delta-shadow on STATE_CHANGED event.",
+      mgos_bthing_get_uid(arg->thing)));
+  }
 
   if (!s_ctx.optimize_enabled) {
     // optimization is OFF, I must trigger events immediately
@@ -193,13 +204,18 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
 
   if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED)
     return; // already managed in mg_bthing_shadow_on_state_changed()
-  if (mg_bthing_shadow_must_ignore_item(arg->thing))
+  if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
+    LOG(LL_INFO, ("bThing ignored #2!")); // CANCEL
     return; // the bThing must be ignored
+  }
 
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
 
-  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing);
+  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing) {
+    LOG(LL_ERROR, ("Something went wrong adding '%s' state to delta-shadow on STATE_UPDATED event.",
+      mgos_bthing_get_uid(arg->thing)));
+  }
 
   if (!s_ctx.optimize_enabled) {
     // optimization is OFF, I must try to collect multiple 
