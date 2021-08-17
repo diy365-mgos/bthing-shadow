@@ -36,13 +36,13 @@ bool mg_bthing_shadow_add_state(mgos_bvar_t shadow, mgos_bthing_t thing) {
   return mgos_bvar_add_key(dic, mgos_bthing_get_id(thing), (mgos_bvar_t)mg_bthing_get_raw_state(thing));
 }
 
-mgos_bvar_t mg_bthing_shadow_get_state(mgos_bvarc_t shadow, mgos_bthing_t thing) {
+mgos_bvarc_t mg_bthing_shadow_get_state(mgos_bvarc_t shadow, mgos_bthing_t thing) {
   const char *dom = mgos_bthing_get_domain(thing);
-  mgos_bvar_t dic = shadow;
+  mgos_bvarc_t dic = shadow;
   if (dom) {
     if (!mgos_bvar_try_get_key(shadow, dom, &dic)) return NULL;
   }
-  return mgos_bvar_get_key(dic, mgos_bthing_get_id(thing));
+  return mgos_bvarc_get_key(dic, mgos_bthing_get_id(thing));
 }
 
 void mg_bthing_shadow_remove_state(mgos_bvar_t shadow, mgos_bthing_t thing) {
@@ -82,7 +82,7 @@ void mg_bthing_shadow_empty(mgos_bvar_t shadow) {
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   if (ev == MGOS_EV_BTHING_CREATED) {
     #if MGOS_BTHING_HAVE_SENSORS
-    mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data));
+    mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data);
     #else
     (void) ev_data;
     #endif
@@ -177,7 +177,7 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
 
-  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, (mgos_bvar_t)arg->state);
+  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing);
 
   if (!s_ctx.optimize_enabled) {
     // optimization is OFF, I must trigger events immediately
@@ -199,7 +199,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
 
-  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, (mgos_bvar_t)arg->state);
+  mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing);
 
   if (!s_ctx.optimize_enabled) {
     // optimization is OFF, I must try to collect multiple 
@@ -226,7 +226,7 @@ static void mg_bthing_shadow_optimize_timer_cb(void *arg) {
 #endif //MGOS_BTHING_HAVE_SENSORS
 
 bool mgos_bthing_shadow_disable(mgos_bthing_t thing) {
-  mg_bthing_shadow_remove_state(s_ctx.state.full_shadow, thing);
+  mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
   return true;
 }
 
