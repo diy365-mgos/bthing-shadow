@@ -40,7 +40,7 @@ mgos_bvarc_t mg_bthing_shadow_get_state(mgos_bvarc_t shadow, mgos_bthing_t thing
   const char *dom = mgos_bthing_get_domain(thing);
   mgos_bvarc_t dic = shadow;
   if (dom) {
-    if (!mgos_bvar_try_get_key(shadow, dom, &dic)) return NULL;
+    if (!mgos_bvarc_try_get_key(shadow, dom, &dic)) return NULL;
   }
   return mgos_bvarc_get_key(dic, mgos_bthing_get_id(thing));
 }
@@ -49,7 +49,7 @@ void mg_bthing_shadow_remove_state(mgos_bvar_t shadow, mgos_bthing_t thing) {
   const char *dom = mgos_bthing_get_domain(thing);
   mgos_bvar_t dic = shadow;
   if (dom) {
-    if (!mgos_bvar_try_get_key(shadow, dom, &dic)) return true;
+    if (!mgos_bvar_try_get_key(shadow, dom, &dic)) return;
   }
   mgos_bvar_remove_key(dic, mgos_bthing_get_id(thing));
   if (dic != shadow && mgos_bvar_length(dic) == 0)
@@ -240,7 +240,7 @@ bool mgos_bthing_shadow_set(mgos_bvarc_t shadow) {
     while (mgos_bthing_get_next(&things, &thing)) {
       if (mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing)) {
         // the bThing enabled for shadow
-        mgos_bvar_t state = mg_bthing_shadow_get_state(shadow, thing);
+        mgos_bvarc_t state = mg_bthing_shadow_get_state(shadow, thing);
         if (state)
           mgos_bthing_set_state(thing, state);
       }
