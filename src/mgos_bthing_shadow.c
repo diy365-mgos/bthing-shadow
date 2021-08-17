@@ -29,11 +29,20 @@ bool mg_bthing_shadow_add_state(mgos_bvar_t shadow, mgos_bthing_t thing) {
       dic = mgos_bvar_new_dic();
       if (!mgos_bvar_add_key(shadow, dom, dic)) {
         mgos_bvar_free(dic);
+        LOG(LL_INFO, ("FAILED to add '%s' domain dictionary.", dom)); // CANCEL
         return false;
       }
+      LOG(LL_INFO, ("OK, '%s' domain dictionary added.", dom)); // CANCEL
     }
   }
-  return mgos_bvar_add_key(dic, mgos_bthing_get_id(thing), (mgos_bvar_t)mg_bthing_get_raw_state(thing));
+  bool ret = mgos_bvar_add_key(dic, mgos_bthing_get_id(thing), (mgos_bvar_t)mg_bthing_get_raw_state(thing));
+  if (!ret)
+    LOG(LL_INFO, ("FAILED adding '%s' state to %s.", mgos_bthing_get_id(thing),
+      (dic == shadow ? "shadow" : "domain dictionary"))); // CANCEL
+  else
+    LOG(LL_INFO, ("OK adding '%s' state to %s.", mgos_bthing_get_id(thing),
+      (dic == shadow ? "shadow" : "domain dictionary"))); // CANCEL
+  return ret;
 }
 
 mgos_bvarc_t mg_bthing_shadow_get_state(mgos_bvarc_t shadow, mgos_bthing_t thing) {
@@ -142,7 +151,6 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
     s_ctx.last_update = 0;
     return true;
   }
-  LOG(LL_INFO, ("NO events triggered")); // CANCEL
   return false;
 }
 
