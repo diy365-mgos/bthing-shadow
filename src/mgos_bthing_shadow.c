@@ -185,7 +185,7 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
 
-  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing) {
+  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
     LOG(LL_ERROR, ("Something went wrong adding '%s' state to  delta-shadow on STATE_CHANGED event.",
       mgos_bthing_get_uid(arg->thing)));
   }
@@ -212,7 +212,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
   s_ctx.last_update = mgos_uptime_micros();
   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
 
-  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing) {
+  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
     LOG(LL_ERROR, ("Something went wrong adding '%s' state to delta-shadow on STATE_UPDATED event.",
       mgos_bthing_get_uid(arg->thing)));
   }
