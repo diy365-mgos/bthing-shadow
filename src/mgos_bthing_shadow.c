@@ -29,20 +29,11 @@ bool mg_bthing_shadow_add_state(mgos_bvar_t shadow, mgos_bthing_t thing) {
       dic = mgos_bvar_new_dic();
       if (!mgos_bvar_add_key(shadow, dom, dic)) {
         mgos_bvar_free(dic);
-        LOG(LL_INFO, ("FAILED to add '%s' domain dictionary.", dom)); // CANCEL
         return false;
       }
-      LOG(LL_INFO, ("OK, '%s' domain dictionary added.", dom)); // CANCEL
     }
   }
-  bool ret = mgos_bvar_add_key(dic, mgos_bthing_get_id(thing), (mgos_bvar_t)mg_bthing_get_raw_state(thing));
-  if (!ret)
-    LOG(LL_INFO, ("FAILED adding '%s' state to %s.", mgos_bthing_get_id(thing),
-      (dic == shadow ? "shadow" : "domain dictionary"))); // CANCEL
-  else
-    LOG(LL_INFO, ("OK adding '%s' state to %s.", mgos_bthing_get_id(thing),
-      (dic == shadow ? "shadow" : "domain dictionary"))); // CANCEL
-  return ret;
+  return mgos_bvar_add_key(dic, mgos_bthing_get_id(thing), (mgos_bvar_t)mg_bthing_get_raw_state(thing));
 }
 
 mgos_bvarc_t mg_bthing_shadow_get_state(mgos_bvarc_t shadow, mgos_bthing_t thing) {
@@ -135,13 +126,11 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
     if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
       // raise the SHADOW_CHANGED event
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
-      LOG(LL_INFO, ("MGOS_EV_BTHING_SHADOW_CHANGED triggered")); // CANCEL
     }
 
     if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_UPDATED) == MGOS_BTHING_STATE_FLAG_UPDATED) {
       // raise the SHADOW_UPDATED event
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
-      LOG(LL_INFO, ("MGOS_EV_BTHING_SHADOW_UPDATED triggered")); // CANCEL
     }
 
     // remove all keys from delta shadow
@@ -186,7 +175,6 @@ static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userd
   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
   
   if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
-    LOG(LL_INFO, ("bThing ignored #1!")); // CANCEL
     return; // the bThing must be ignored
   }
 
@@ -213,7 +201,6 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
   if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED)
     return; // already managed in mg_bthing_shadow_on_state_changed()
   if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
-    LOG(LL_INFO, ("bThing ignored #2!")); // CANCEL
     return; // the bThing must be ignored
   }
 
