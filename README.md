@@ -1,6 +1,6 @@
 # bThings Shadow Library
 ## Overview
-Mongoose-OS library for managing [bThings](https://github.com/diy365-mgos/bthing) states as a single shadow state representation. The shadow is a [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) collecting the states of all registered bThings. Each state is added into the dictionary using the bThing ID as key.
+Mongoose-OS library for managing [bThings](https://github.com/diy365-mgos/bthing) states as a single shadow state representation. The shadow is a [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) collecting the states of all registered bThings. Each state is added into the dictionary using the bThing ID as key. NOTE: private bThings (see [mgos_bthing_make_private()](https://github.com/diy365-mgos/bthing#mgos_bthing_make_private) function) won't be exposed.
 ## Features
 - **Observable** - You can detect when one or more states of the shadow change subscribing to the `MGOS_EV_BTHING_SHADOW_CHANGED` event.
 - **Optimized** - You can enable the shadow optimization to prevent the `MGOS_EV_BTHING_SHADOW_CHANGED` event to be triggered on every single state change. When optimization is active, the library trys to collect as much changes as possible triggering  one single `MGOS_EV_BTHING_SHADOW_CHANGED` event.
@@ -42,7 +42,7 @@ Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED` and `MGOS_EV_BTHING_SHADOW_
 |full_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing all states.|
 |delta_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing only changed states.|
 |state_flags|Shadow state flags. It could be a combination of more flags (see [mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#enum-mgos_bthing_state_flag)). Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
-### mgos_bthing_shadow_disable
+<!-- ### mgos_bthing_shadow_disable
 ```c
 bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
 ```
@@ -50,7 +50,7 @@ Excludes the state of a bThing from the shadow. Returns `true` on success, or `f
 
 |Parameter||
 |--|--|
-|thing|A bThing.|
+|thing|A bThing.| -->
 ### mgos_bthing_shadow_set
 ```c
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow);

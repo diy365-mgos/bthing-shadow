@@ -38,7 +38,7 @@ struct mgos_bthing_shadow_state {
   enum mgos_bthing_state_flag state_flags;
 };
 
-bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
+//bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
 
 #if MGOS_BTHING_HAVE_ACTUATORS
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow);

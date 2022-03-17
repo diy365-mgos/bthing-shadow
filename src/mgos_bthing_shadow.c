@@ -94,8 +94,19 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   (void) userdata;
 }
 
-bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
+/* bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
   return (mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing) == NULL);
+} */
+
+bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
+  mgos_bvarc_t s = mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing);
+  if (mgos_bthing_is_private(thing)) {
+    if (s) mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
+    return true;
+  } else {
+    if (!s) mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
+    return false;
+  }
 }
 
 bool mg_bthing_shadow_optimize_timeout_reached() {
@@ -236,10 +247,10 @@ static void mg_bthing_shadow_optimize_timer_cb(void *arg) {
 
 #endif //MGOS_BTHING_HAVE_SENSORS
 
-bool mgos_bthing_shadow_disable(mgos_bthing_t thing) {
+/* bool mgos_bthing_shadow_disable(mgos_bthing_t thing) {
   mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
   return true;
-}
+}  */
 
 #if MGOS_BTHING_HAVE_ACTUATORS
 
