@@ -14,7 +14,7 @@ The library adds the `bthing.shadow` section to the device configuration:
 }
 ```
 ## C/C++ API Reference
-### enum mgos_bthing_shadow_event
+### mgos_bthing_shadow_event
 ```c
 enum mgos_bthing_shadow_event {
   MGOS_EV_BTHING_SHADOW_CHANGED,
@@ -41,7 +41,7 @@ Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED` and `MGOS_EV_BTHING_SHADOW_
 |--|--|
 |full_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing all states.|
 |delta_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing only changed states.|
-|state_flags|Shadow state flags. It could be a combination of more flags (see [mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#enum-mgos_bthing_state_flag)). Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
+|state_flags|Shadow state flags. It could be a combination of more flags (see [mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#mgos_bthing_state_flag)). Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
 <!-- ### mgos_bthing_shadow_disable
 ```c
 bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
