@@ -100,7 +100,7 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
 
 bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
   mgos_bvarc_t s = mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing);
-  if (mgos_bthing_is_private(thing)) {
+  if (mg_bthing_has_flag(thing, MG_BTHING_FLAG_ISPRIVATE)) {
     if (s) mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
     return true;
   } else {
