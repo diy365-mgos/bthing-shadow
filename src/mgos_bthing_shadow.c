@@ -182,45 +182,81 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
   (void) ev;
 }
 
-static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userdata) {
-  struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
+// static void mg_bthing_shadow_on_state_changed(int ev, void *ev_data, void *userdata) {
+//   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
   
-  if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
-    return; // the bThing must be ignored
-  }
+//   if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
+//     return; // the bThing must be ignored
+//   }
 
-  s_ctx.last_update = mgos_uptime_micros();
-  s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
+//   s_ctx.last_update = mgos_uptime_micros();
+//   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
 
-  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
-    LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on STATE_CHANGED event.",
-      mgos_bthing_get_uid(arg->thing)));
-  }
+//   if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
+//     LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on STATE_CHANGED event.",
+//       mgos_bthing_get_uid(arg->thing)));
+//   }
 
-  if (!s_ctx.optimize_enabled) {
-    // optimization is OFF, I must trigger events immediately
-    mg_bthing_shadow_trigger_events(true);
-  }
+//   if (!s_ctx.optimize_enabled) {
+//     // optimization is OFF, I must trigger events immediately
+//     mg_bthing_shadow_trigger_events(true);
+//   }
 
-  (void) userdata;
-  (void) ev;
-}
+//   (void) userdata;
+//   (void) ev;
+// }
+
+// static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
+//   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
+
+//   if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED)
+//     return; // already managed in mg_bthing_shadow_on_state_changed()
+//   if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
+//     return; // the bThing must be ignored
+//   }
+
+//   s_ctx.last_update = mgos_uptime_micros();
+//   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
+
+//   if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
+//     LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on STATE_UPDATED event.",
+//       mgos_bthing_get_uid(arg->thing)));
+//   }
+
+//   if (!s_ctx.optimize_enabled) {
+//     // optimization is OFF, I must try to collect multiple 
+//     // STATE_UPDATED event into a single one.
+//     if (mg_bthing_shadow_start_optimize_timer(mg_bthing_shadow_multiupdate_timer_cb) != MGOS_INVALID_TIMER_ID) {
+//       // The timer for collecting multiple STATE_UPDATED is started. Nothing to do.
+//       return;
+//     }
+//     // The timer for collecting multiple STATE_UPDATED failed to start.
+//     // I must trigger events immediately.
+//     mg_bthing_shadow_trigger_events(true);
+//   }
+
+//   (void) arg;
+//   (void) userdata;
+//   (void) ev;
+// }
 
 static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
 
-  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED)
-    return; // already managed in mg_bthing_shadow_on_state_changed()
   if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
     return; // the bThing must be ignored
   }
 
   s_ctx.last_update = mgos_uptime_micros();
-  s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
+  s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
 
-  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
-    LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on STATE_UPDATED event.",
-      mgos_bthing_get_uid(arg->thing)));
+  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+    if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
+      LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on STATE_UPDATED event.",
+        mgos_bthing_get_uid(arg->thing)));
+    } else {
+      s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;
+    }
   }
 
   if (!s_ctx.optimize_enabled) {
@@ -317,10 +353,10 @@ bool mgos_bthing_shadow_init() {
     return false;
   }
 
-  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGED, mg_bthing_shadow_on_state_changed, NULL)) {
-    LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGED handler."));
-    return false;
-  }
+  // if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGED, mg_bthing_shadow_on_state_changed, NULL)) {
+  //   LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGED handler."));
+  //   return false;
+  // }
 
   if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_UPDATED, mg_bthing_shadow_on_state_updated, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_UPDATED handler."));
