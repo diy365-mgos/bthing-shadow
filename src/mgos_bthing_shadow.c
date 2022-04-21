@@ -110,13 +110,12 @@ bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
 }
 
 bool mg_bthing_shadow_optimize_timeout_reached() {
-  return ((s_ctx.last_update != 0 &&
-         (mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
+  return ((s_ctx.last_update != 0) &&
+          ((mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
 }
 
 static int mg_bthing_shadow_start_optimize_timer(timer_callback cb) {
-  if (s_ctx.optimize_timer_id != MGOS_INVALID_TIMER_ID) return s_ctx.optimize_timer_id;
-  if (s_ctx.optimize_timeout > 0) {
+  if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID && s_ctx.optimize_timeout > 0) {
     s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout, MGOS_TIMER_REPEAT, cb, NULL);
   }
   return s_ctx.optimize_timer_id;
