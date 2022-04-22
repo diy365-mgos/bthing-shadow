@@ -2,8 +2,8 @@
 ## Overview
 Mongoose-OS library for managing [bThings](https://github.com/diy365-mgos/bthing) states as a single shadow state representation. The shadow is a [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) collecting the states of all registered bThings. Each state is added into the dictionary using the bThing ID as key. NOTE: private bThings (see [mgos_bthing_make_private()](https://github.com/diy365-mgos/bthing#mgos_bthing_make_private) function) won't be exposed.
 ## Features
-- **Observable** - You can detect when one or more states of the shadow change subscribing to the `MGOS_EV_BTHING_SHADOW_CHANGED` event.
-- **Optimized** - You can enable the shadow optimization to prevent the `MGOS_EV_BTHING_SHADOW_CHANGED` event to be triggered on every single state change. When optimization is active, the library trys to collect as much changes as possible triggering  one single `MGOS_EV_BTHING_SHADOW_CHANGED` event.
+- **Observable** - You can detect when one or more states of the shadow change subscribing to its [events](https://github.com/diy365-mgos/bthing-shadow#mgos_bthing_shadow_event).
+- **Optimized** - You can enable the shadow optimization to prevent multiple sequential events are rised. When optimization is active the library trys to collect as much events as possible triggering one single event.
 ## Configuration
 The library adds the `bthing.shadow` section to the device configuration:
 ```javascript
@@ -27,8 +27,8 @@ Events triggered by a shadow state. Use [mgos_event_add_handler()](https://mongo
 |Event||
 |--|--|
 |MGOS_EV_BTHING_SHADOW_CHANGED|Triggered when the shadow state is changed. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.|
-|MGOS_EV_BTHING_SHADOW_UPDATED|Triggered when the shadow state has been updated. It is triggered also if the state is not changed. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.|
-|MGOS_EV_BTHING_SHADOW_PUBLISHING|...|
+|MGOS_EV_BTHING_SHADOW_UPDATED|Triggered when the shadow state has been updated. It is triggered also if the shadow state is not changed. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.|
+|MGOS_EV_BTHING_SHADOW_PUBLISHING|Triggered when the shadow state is going to be published. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.|
 ### mgos_bthing_shadow_state
 ```c
 struct mgos_bthing_shadow_state {
@@ -37,7 +37,7 @@ struct mgos_bthing_shadow_state {
   enum mgos_bthing_state_flag state_flags;
 };
 ```
-Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED` and `MGOS_EV_BTHING_SHADOW_UPDATED` event's handlers (see [mgos_event_handler_t](https://mongoose-os.com/docs/mongoose-os/api/core/mgos_event.h.md#mgos_event_handler_t)).
+Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED`, `MGOS_EV_BTHING_SHADOW_UPDATED` and `MGOS_EV_BTHING_SHADOW_PUBLISHING` event's handlers (see [mgos_event_handler_t](https://mongoose-os.com/docs/mongoose-os/api/core/mgos_event.h.md#mgos_event_handler_t)).
 
 |Field||
 |--|--|
