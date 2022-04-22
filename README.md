@@ -18,7 +18,8 @@ The library adds the `bthing.shadow` section to the device configuration:
 ```c
 enum mgos_bthing_shadow_event {
   MGOS_EV_BTHING_SHADOW_CHANGED,
-  MGOS_EV_BTHING_SHADOW_UPDATED
+  MGOS_EV_BTHING_SHADOW_UPDATED,
+  MGOS_EV_BTHING_SHADOW_PUBLISHING
 };
 ```
 Events triggered by a shadow state. Use [mgos_event_add_handler()](https://mongoose-os.com/docs/mongoose-os/api/core/mgos_event.h.md#mgos_event_add_handler) or [mgos_event_add_group_handler(MGOS_EV_BTHING_SHADOW_ANY, ...)](https://mongoose-os.com/docs/mongoose-os/api/core/mgos_event.h.md#mgos_event_add_group_handler) for subscribing to them.
@@ -27,6 +28,7 @@ Events triggered by a shadow state. Use [mgos_event_add_handler()](https://mongo
 |--|--|
 |MGOS_EV_BTHING_SHADOW_CHANGED|Triggered when the shadow state is changed. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.|
 |MGOS_EV_BTHING_SHADOW_UPDATED|Triggered when the shadow state has been updated. It is triggered also if the state is not changed. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.|
+|MGOS_EV_BTHING_SHADOW_PUBLISHING|...|
 ### mgos_bthing_shadow_state
 ```c
 struct mgos_bthing_shadow_state {
