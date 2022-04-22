@@ -80,17 +80,29 @@ void mg_bthing_shadow_empty(mgos_bvar_t shadow) {
 #endif // MGOS_BTHING_HAVE_SENSORS
 
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
-  if (ev == MGOS_EV_BTHING_CREATED) {
-    #if MGOS_BTHING_HAVE_SENSORS
-    if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data)) {
-      LOG(LL_ERROR, ("Something went wrong adding '%s' state to the full-shadow.",
-        mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
-    }
-    #else
-    (void) ev_data;
-    #endif
+  #if MGOS_BTHING_HAVE_SENSORS
+  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data)) {
+    LOG(LL_ERROR, ("Something went wrong adding '%s' state to the full-shadow.",
+      mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
   }
+  #else
+  (void) ev_data;
+  #endif
   
+  (void) ev;
+  (void) userdata;
+}
+
+static void mg_bthing_shadow_on_made_private(int ev, void *ev_data, void *userdata) {
+  #if MGOS_BTHING_HAVE_SENSORS
+  if (ev_data) {
+    mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data);
+  }
+  #else
+  (void) ev_data;
+  #endif
+  
+  (void) ev;
   (void) userdata;
 }
 
@@ -98,16 +110,16 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   return (mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing) == NULL);
 } */
 
-bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
-  mgos_bvarc_t s = mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing);
-  if (mg_bthing_has_flag(thing, MG_BTHING_FLAG_ISPRIVATE)) {
-    if (s) mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
-    return true;
-  } else {
-    if (!s) mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
-    return false;
-  }
-}
+// bool mg_bthing_shadow_must_ignore_item(mgos_bthing_t thing) {
+//   mgos_bvarc_t s = mg_bthing_shadow_get_state(s_ctx.state.full_shadow, thing);
+//   if (mg_bthing_has_flag(thing, MG_BTHING_FLAG_ISPRIVATE)) {
+//     if (s) mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
+//     return true;
+//   } else {
+//     if (!s) mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
+//     return false;
+//   }
+// }
 
 // bool mg_bthing_shadow_optimize_timeout_reached() {
 //   return ((s_ctx.last_update != 0) &&
@@ -261,9 +273,8 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
 static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
 
-  if (mg_bthing_shadow_must_ignore_item(arg->thing)) {
-    return; // the bThing must be ignored
-  }
+  // ignore events from private instances
+  if (mg_bthing_has_flag(arg->thing, MG_BTHING_FLAG_ISPRIVATE)) return;
 
   s_ctx.last_update = mgos_uptime_micros();
 
@@ -364,10 +375,15 @@ bool mgos_bthing_shadow_init() {
 
   if (!mgos_event_register_base(MGOS_BTHING_SHADOW_EVENT_BASE, "bThing Shadow events")) return false;
 
-   if (!mgos_event_add_handler(MGOS_EV_BTHING_CREATED, mg_bthing_shadow_on_created, NULL)) {
+  if (!mgos_event_add_handler(MGOS_EV_BTHING_CREATED, mg_bthing_shadow_on_created, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_CREATED handler."));
     return false;
   }
+
+  if (!mgos_event_add_handler(MGOS_EV_BTHING_MADE_PRIVATE, mg_bthing_shadow_on_made_private, NULL)) {
+    LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_MADE_PRIVATE handler."));
+    return false;
+  } 
   
   #if MGOS_BTHING_HAVE_SENSORS
   if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGING, mg_bthing_shadow_on_state_changing, NULL)) {
