@@ -149,20 +149,32 @@ bool mg_bthing_shadow_optimize_timeout_reached() {
 static bool mg_bthing_shadow_trigger_events(bool force) {
   if (force || mg_bthing_shadow_optimize_timeout_reached()) {
     
+    enum mgos_bthing_state_flag state_flags = s_ctx.state.state_flags;
+    if ((state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+      s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_CHANGED;
+    } else {
+      s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
+    }
+    
+    if ((state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB) {
+      s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_FORCED_PUB;
+    }
+    
     if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
       // raise the SHADOW_CHANGED event
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
-    }
+    }  
 
-    if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_UPDATED) == MGOS_BTHING_STATE_FLAG_UPDATED) {
+    if ((state_flags & MGOS_BTHING_STATE_FLAG_UPDATED) == MGOS_BTHING_STATE_FLAG_UPDATED) {
       // raise the SHADOW_UPDATED event
+      s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
-    }
-
-    if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB ||
-        (s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
-      // raise the SHADOW_PUBLISHING event
-      mgos_event_trigger(MGOS_EV_BTHING_SHADOW_PUBLISHING, &s_ctx.state);
+    
+      if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB ||
+          (s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+        // raise the SHADOW_PUBLISHING event
+        mgos_event_trigger(MGOS_EV_BTHING_SHADOW_PUBLISHING, &s_ctx.state);
+      }
     }
 
     // remove all keys from delta shadow
