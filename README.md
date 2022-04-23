@@ -2,8 +2,8 @@
 ## Overview
 Mongoose-OS library for managing [bThings](https://github.com/diy365-mgos/bthing) states as a single shadow state representation. The shadow is a [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) collecting the states of all registered bThings. Each state is added into the dictionary using the bThing ID as key. NOTE: private bThings (see [mgos_bthing_make_private()](https://github.com/diy365-mgos/bthing#mgos_bthing_make_private) function) won't be exposed.
 ## Features
-- **Observable** - You can detect when one or more states of the shadow change subscribing to its [events](https://github.com/diy365-mgos/bthing-shadow#mgos_bthing_shadow_event).
-- **Optimized** - You can enable the shadow optimization to prevent several sequential changes from being notified. When optimization is active the library trys to collect as much changes/updates as possible triggering one single [event](https://github.com/diy365-mgos/bthing-shadow#mgos_bthing_shadow_event).
+- **Observable** - You can detect when one or more states of the shadow change subscribing to its [events](#mgos_bthing_shadow_event).
+- **Optimized** - You can enable the shadow optimization to prevent several sequential changes from being notified. When optimization is active the library trys to collect as much changes/updates as possible triggering one single [event](#mgos_bthing_shadow_event).
 ## Configuration
 The library adds the `bthing.shadow` section to the device configuration:
 ```javascript
@@ -43,7 +43,7 @@ Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED`, `MGOS_EV_BTHING_SHADOW_UPD
 |--|--|
 |full_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing all states.|
 |delta_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing only changed states.|
-|state_flags|Shadow state flags. It could be a combination of more [mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#mgos_bthing_state_flag) flags.<br><br>Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING`, `MGOS_BTHING_STATE_FLAG_CHANGING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
+|state_flags|Shadow state flags. It could be a combination of more [mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#mgos_bthing_state_flag) flags depending on the triggered [event](#mgos_bthing_shadow_event).<br><br>Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING`, `MGOS_BTHING_STATE_FLAG_CHANGING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
 <!-- ### mgos_bthing_shadow_disable
 ```c
 bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
