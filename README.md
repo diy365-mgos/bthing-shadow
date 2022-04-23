@@ -43,7 +43,7 @@ Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED`, `MGOS_EV_BTHING_SHADOW_UPD
 |--|--|
 |full_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing all states.|
 |delta_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing only changed states.|
-|state_flags|Shadow state flags. It could be a combination of one or more [enum mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#mgos_bthing_state_flag) flags depending on the triggered [event](#mgos_bthing_shadow_event).<br><br>Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING`, `MGOS_BTHING_STATE_FLAG_CHANGING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
+|state_flags|Shadow state flags. It could be a combination of one or more [mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#mgos_bthing_state_flag) flags depending on the triggered [event](#mgos_bthing_shadow_event).<br><br>Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING`, `MGOS_BTHING_STATE_FLAG_CHANGING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
 <!-- ### mgos_bthing_shadow_disable
 ```c
 bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
