@@ -130,7 +130,7 @@ bool mg_bthing_shadow_optimize_timeout_reached() {
   if (s_ctx.last_update == 0)
     LOG(LL_INFO, ("s_ctx.last_update = 0"));
   else
-    LOG(LL_INFO, ("timeout = %lld(%lld)", mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()), mgos_uptime_micros()));
+    LOG(LL_INFO, ("timeout: %lld-%lld=%lld", s_ctx.last_update, mgos_uptime_micros(), mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros())));
   return (s_ctx.last_update == 0 ? true : ((mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
 }
 
