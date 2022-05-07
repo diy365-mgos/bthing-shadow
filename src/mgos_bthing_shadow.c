@@ -163,17 +163,20 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
     if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
       // raise the SHADOW_CHANGED event
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
+      LOG(LL_INFO, ("TRIGGER SHADOW_CHANGED"));
     }  
 
     if ((state_flags & MGOS_BTHING_STATE_FLAG_UPDATED) == MGOS_BTHING_STATE_FLAG_UPDATED) {
       // raise the SHADOW_UPDATED event
       s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
+      LOG(LL_INFO, ("TRIGGER SHADOW_UPDATED"));
     
       if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB ||
           (s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
         // raise the SHADOW_PUBLISHING event
         mgos_event_trigger(MGOS_EV_BTHING_SHADOW_PUBLISHING, &s_ctx.state);
+        LOG(LL_INFO, ("TRIGGER SHADOW_PUBLISHING"));
       }
     }
 
@@ -190,8 +193,11 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
 static void mg_bthing_shadow_optimize_timer_cb(void *arg) {
   if (mg_bthing_shadow_trigger_events(false)) {
     // stop the optimizer timer
-    mgos_clear_timer(s_ctx.optimize_timer_id);
-    s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
+    if (s_ctx.optimize_timer_id != MGOS_INVALID_TIMER_ID) {
+      mgos_clear_timer(s_ctx.optimize_timer_id);
+      s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
+      LOG(LL_INFO, ("STOP OPTIMIZER"));
+    }
   }
   (void) arg;
 }
@@ -305,6 +311,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
   // set MGOS_BTHING_STATE_FLAG_FORCED_PUB flag
   if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB) {
     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_FORCED_PUB;
+    LOG(LL_INFO, ("IS FORCED!"));
   }
 
   if (s_ctx.optimize_enabled || ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB)) {
@@ -312,6 +319,7 @@ static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userd
     // In both cases I must collect multiple STATE_UPDATED events
     // into a single one. So I start the optimizer timer.
     if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
+      LOG(LL_INFO, ("START OPTIMIZER"));
       s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout, MGOS_TIMER_REPEAT, mg_bthing_shadow_optimize_timer_cb, NULL);
       if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
         // The timer for collecting multiple STATE_UPDATED events
