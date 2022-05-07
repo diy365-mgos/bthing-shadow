@@ -130,7 +130,7 @@ bool mg_bthing_shadow_optimize_timeout_reached() {
   if (s_ctx.last_update == 0)
     LOG(LL_INFO, ("s_ctx.last_update = 0"));
   else
-    LOG(LL_INFO, ("timeout = %ld", (long)(mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000)));
+    LOG(LL_INFO, ("timeout = %ld(%ld)", mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()), mgos_uptime_micros()));
   return (s_ctx.last_update == 0 ? true : ((mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
 }
 
@@ -189,10 +189,8 @@ static bool mg_bthing_shadow_trigger_events(bool force) {
 
     s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
     s_ctx.last_update = 0;
-    LOG(LL_INFO, ("mg_bthing_shadow_trigger_events() returns TRUE"));
     return true;
   }
-  LOG(LL_INFO, ("mg_bthing_shadow_trigger_events() returns FALSE"));
   return false;
 }
 
