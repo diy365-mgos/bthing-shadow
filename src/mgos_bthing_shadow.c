@@ -15,7 +15,7 @@ static struct mg_bthing_shadow_ctx {
   bool optimize_enabled; 
   mgos_timer_id optimize_timer_id;
   int optimize_timeout; 
-  int64_t last_update;
+  int64_t last_event;
 } s_ctx;
 
 #if MGOS_BTHING_HAVE_SENSORS
@@ -122,17 +122,17 @@ static void mg_bthing_shadow_on_made_private(int ev, void *ev_data, void *userda
 // }
 
 // bool mg_bthing_shadow_optimize_timeout_reached() {
-//   return ((s_ctx.last_update != 0) &&
-//           ((mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
+//   return ((s_ctx.last_event != 0) &&
+//           ((mg_bthing_duration_micro(s_ctx.last_event, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
 // }
 
-bool mg_bthing_shadow_optimize_timeout_reached() {
-  if (s_ctx.last_update == 0)
-    LOG(LL_INFO, ("s_ctx.last_update = 0"));
-  else
-    LOG(LL_INFO, ("timeout: %lld-%lld=%lld", s_ctx.last_update, mgos_uptime_micros(), mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros())));
-  return (s_ctx.last_update == 0 ? true : ((mg_bthing_duration_micro(s_ctx.last_update, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
-}
+// bool mg_bthing_shadow_optimize_timeout_reached() {
+//   if (s_ctx.last_event == 0)
+//     LOG(LL_INFO, ("s_ctx.last_event = 0"));
+//   else
+//     LOG(LL_INFO, ("timeout: %lld-%lld=%lld", s_ctx.last_event, mgos_uptime_micros(), mg_bthing_duration_micro(s_ctx.last_event, mgos_uptime_micros())));
+//   return (s_ctx.last_event == 0 ? true : ((mg_bthing_duration_micro(s_ctx.last_event, mgos_uptime_micros()) / 1000) >= s_ctx.optimize_timeout));
+// }
 
 // static int mg_bthing_shadow_start_optimize_timer(timer_callback cb) {
 //   if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID && s_ctx.optimize_timeout > 0) {
@@ -150,58 +150,89 @@ bool mg_bthing_shadow_optimize_timeout_reached() {
 
 #if MGOS_BTHING_HAVE_SENSORS
 
-static bool mg_bthing_shadow_trigger_events(bool force) {
-  if (force || mg_bthing_shadow_optimize_timeout_reached()) {
+// static bool mg_bthing_shadow_trigger_events(bool force) {
+//   if (force || mg_bthing_shadow_optimize_timeout_reached()) {
     
-    enum mgos_bthing_state_flag state_flags = s_ctx.state.state_flags;
-    if ((state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
-      s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_CHANGED;
-    } else {
-      s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
-    }
+//     enum mgos_bthing_state_flag state_flags = s_ctx.state.state_flags;
+//     if ((state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+//       s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_CHANGED;
+//     } else {
+//       s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
+//     }
     
-    if ((state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB) {
-      s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_FORCED_PUB;
-    }
+//     if ((state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB) {
+//       s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_FORCED_PUB;
+//     }
     
-    if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
-      // raise the SHADOW_CHANGED event
-      mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
-      LOG(LL_INFO, ("TRIGGER SHADOW_CHANGED"));
-    }  
+//     if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+//       // raise the SHADOW_CHANGED event
+//       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
+//       LOG(LL_INFO, ("TRIGGER SHADOW_CHANGED"));
+//     }  
 
-    if ((state_flags & MGOS_BTHING_STATE_FLAG_UPDATED) == MGOS_BTHING_STATE_FLAG_UPDATED) {
-      // raise the SHADOW_UPDATED event
-      s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
-      mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
-      LOG(LL_INFO, ("TRIGGER SHADOW_UPDATED"));
+//     if ((state_flags & MGOS_BTHING_STATE_FLAG_UPDATED) == MGOS_BTHING_STATE_FLAG_UPDATED) {
+//       // raise the SHADOW_UPDATED event
+//       s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
+//       mgos_event_trigger(MGOS_EV_BTHING_SHADOW_UPDATED, &s_ctx.state);
+//       LOG(LL_INFO, ("TRIGGER SHADOW_UPDATED"));
     
-      if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB ||
-          (s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
-        // raise the SHADOW_PUBLISHING event
-        mgos_event_trigger(MGOS_EV_BTHING_SHADOW_PUBLISHING, &s_ctx.state);
-        LOG(LL_INFO, ("TRIGGER SHADOW_PUBLISHING"));
-      }
-    }
+//       if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB ||
+//           (s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+//         // raise the SHADOW_PUBLISHING event
+//         mgos_event_trigger(MGOS_EV_BTHING_SHADOW_PUBLISHING, &s_ctx.state);
+//         LOG(LL_INFO, ("TRIGGER SHADOW_PUBLISHING"));
+//       }
+//     }
 
-    // remove all keys from delta shadow
-    mg_bthing_shadow_empty((mgos_bvar_t)s_ctx.state.delta_shadow);
+//     // remove all keys from delta shadow
+//     mg_bthing_shadow_empty((mgos_bvar_t)s_ctx.state.delta_shadow);
 
-    s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
-    s_ctx.last_update = 0;
-    return true;
+//     s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
+//     s_ctx.last_event = 0;
+//     return true;
+//   }
+//   return false;
+// }
+
+static bool mg_bthing_shadow_trigger_events() {
+  if (s_ctx.last_event == 0) return false;
+  
+  if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+    // raise the SHADOW_CHANGED event
+    mgos_event_trigger(MGOS_EV_BTHING_SHADOW_CHANGED, &s_ctx.state);
   }
-  return false;
+
+  if ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_PUBLISHING) == MGOS_BTHING_STATE_FLAG_PUBLISHING) {
+    // raise the SHADOW_CHANGED event
+    mgos_event_trigger(MGOS_EV_BTHING_SHADOW_PUBLISHING, &s_ctx.state);
+  }  
+
+  // remove all keys from delta shadow
+  mg_bthing_shadow_empty((mgos_bvar_t)s_ctx.state.delta_shadow);
+
+  s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
+  s_ctx.last_event = 0;
+  return true;
 }
 
+// static void mg_bthing_shadow_optimize_timer_cb(void *arg) {
+//   if (mg_bthing_shadow_trigger_events(false)) {
+//     // stop the optimizer timer
+//     if (s_ctx.optimize_timer_id != MGOS_INVALID_TIMER_ID) {
+//       mgos_clear_timer(s_ctx.optimize_timer_id);
+//       s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
+//       LOG(LL_INFO, ("STOP OPTIMIZER"));
+//     }
+//   }
+//   (void) arg;
+// }
+
 static void mg_bthing_shadow_optimize_timer_cb(void *arg) {
-  if (mg_bthing_shadow_trigger_events(false)) {
+  if (!mg_bthing_shadow_trigger_events() && (s_ctx.optimize_timer_id != MGOS_INVALID_TIMER_ID))  {
     // stop the optimizer timer
-    if (s_ctx.optimize_timer_id != MGOS_INVALID_TIMER_ID) {
-      mgos_clear_timer(s_ctx.optimize_timer_id);
-      s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
-      LOG(LL_INFO, ("STOP OPTIMIZER"));
-    }
+    mgos_clear_timer(s_ctx.optimize_timer_id);
+    s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
+    LOG(LL_INFO, ("STOP OPTIMIZER"));
   }
   (void) arg;
 }
@@ -227,7 +258,8 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
   if (mg_bthing_shadow_get_state(s_ctx.state.delta_shadow, arg->thing) != NULL) {
     // the changed state was already queued into delta-shadow, so
     // I must flush the queue and trigger events before moving on
-    mg_bthing_shadow_trigger_events(true);
+    mg_bthing_shadow_trigger_events();
+    //mg_bthing_shadow_trigger_events(true);
   }
 
   (void) userdata;
@@ -241,7 +273,7 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
 //     return; // the bThing must be ignored
 //   }
 
-//   s_ctx.last_update = mgos_uptime_micros();
+//   s_ctx.last_event = mgos_uptime_micros();
 //   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;   
 
 //   if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
@@ -267,7 +299,7 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
 //     return; // the bThing must be ignored
 //   }
 
-//   s_ctx.last_update = mgos_uptime_micros();
+//   s_ctx.last_event = mgos_uptime_micros();
 //   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;   
 
 //   if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
@@ -292,45 +324,84 @@ static void mg_bthing_shadow_on_state_changing(int ev, void *ev_data, void *user
 //   (void) ev;
 // }
 
-static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
+// static void mg_bthing_shadow_on_state_updated(int ev, void *ev_data, void *userdata) {
+//   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
+
+//   // ignore events from private instances
+//   if (mg_bthing_has_flag(arg->thing, MG_BTHING_FLAG_ISPRIVATE)) return;
+
+//   s_ctx.last_event = mgos_uptime_micros();
+
+//   if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+//     // set MGOS_BTHING_STATE_FLAG_CHANGED flag
+//     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;
+//     // add the changed thing to the delta-shadow
+//     if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
+//       LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on STATE_UPDATED event.", mgos_bthing_get_uid(arg->thing)));
+//     }
+//   }
+
+//   // set MGOS_BTHING_STATE_FLAG_UPDATED flag
+//   s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
+
+//   // set MGOS_BTHING_STATE_FLAG_FORCED_PUB flag
+//   if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB) {
+//     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_FORCED_PUB;
+//     LOG(LL_INFO, ("IS FORCED!"));
+//   }
+
+//   if (s_ctx.optimize_enabled || ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB)) {
+//     // Optimization is ON or a forced publish has been requsted.
+//     // In both cases I must collect multiple STATE_UPDATED events
+//     // into a single one. So I start the optimizer timer.
+//     if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
+//       LOG(LL_INFO, ("START OPTIMIZER"));
+//       s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout, MGOS_TIMER_REPEAT, mg_bthing_shadow_optimize_timer_cb, NULL);
+//       if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
+//         // The timer for collecting multiple STATE_UPDATED events
+//         // failed to start. I must trigger events immediately.
+//         mg_bthing_shadow_trigger_events(true);
+//       }
+//     }
+//   }
+
+//   (void) arg;
+//   (void) userdata;
+//   (void) ev;
+// }
+
+static void mg_bthing_shadow_on_state_event(int ev, void *ev_data, void *userdata) {
   struct mgos_bthing_state *arg = (struct mgos_bthing_state *)ev_data;
 
   // ignore events from private instances
   if (mg_bthing_has_flag(arg->thing, MG_BTHING_FLAG_ISPRIVATE)) return;
 
-  s_ctx.last_update = mgos_uptime_micros();
+  s_ctx.last_event = mgos_uptime_micros();
 
-  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) == MGOS_BTHING_STATE_FLAG_CHANGED) {
+  bool forced_pub = false;
+  if (ev == MGOS_EV_BTHING_STATE_CHANGED) {
     // set MGOS_BTHING_STATE_FLAG_CHANGED flag
     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;
     // add the changed thing to the delta-shadow
     if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
-      LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on STATE_UPDATED event.", mgos_bthing_get_uid(arg->thing)));
+      LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on MGOS_EV_BTHING_STATE_CHANGED event.",
+        mgos_bthing_get_uid(arg->thing)));
     }
-  }
+  } else if (ev == MGOS_EV_BTHING_STATE_PUBLISHING) {
+    s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_PUBLISHING;
+    forced_pub = ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) != MGOS_BTHING_STATE_FLAG_CHANGED);
+  )
 
-  // set MGOS_BTHING_STATE_FLAG_UPDATED flag
-  s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_UPDATED;
-
-  // set MGOS_BTHING_STATE_FLAG_FORCED_PUB flag
-  if ((arg->state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB) {
-    s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_FORCED_PUB;
-    LOG(LL_INFO, ("IS FORCED!"));
-  }
-
-  if (s_ctx.optimize_enabled || ((s_ctx.state.state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUB) == MGOS_BTHING_STATE_FLAG_FORCED_PUB)) {
-    // Optimization is ON or a forced publish has been requsted.
+  if ((s_ctx.optimize_enabled || forced_pub) && (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID)) {
+    // Optimization is ON or a forced publish has been requested.
     // In both cases I must collect multiple STATE_UPDATED events
     // into a single one. So I start the optimizer timer.
-    if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
-      LOG(LL_INFO, ("START OPTIMIZER"));
-      s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout, MGOS_TIMER_REPEAT, mg_bthing_shadow_optimize_timer_cb, NULL);
-      if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
-        // The timer for collecting multiple STATE_UPDATED events
-        // failed to start. I must trigger events immediately.
-        mg_bthing_shadow_trigger_events(true);
-      }
-    }
+    s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout, MGOS_TIMER_REPEAT, mg_bthing_shadow_optimize_timer_cb, NULL);
+    LOG(LL_INFO, ("START OPTIMIZER"));
+  }
+
+  if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
+    mg_bthing_shadow_trigger_events();
   }
 
   (void) arg;
@@ -392,7 +463,7 @@ bool mgos_bthing_shadow_init() {
   s_ctx.state.state_flags = MGOS_BTHING_STATE_FLAG_UNCHANGED;
   s_ctx.optimize_enabled = mgos_sys_config_get_bthing_shadow_optimize();
   s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
-  s_ctx.last_update = 0;
+  s_ctx.last_event = 0;
   s_ctx.optimize_timeout = mgos_sys_config_get_bthing_shadow_optimize_timeout();
   if (s_ctx.optimize_timeout <= 0)
     s_ctx.optimize_timeout = MG_BTHING_SHADOW_OPTIMIZE_TIMEOUT;
@@ -420,11 +491,21 @@ bool mgos_bthing_shadow_init() {
   //   return false;
   // }
 
-  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_UPDATED, mg_bthing_shadow_on_state_updated, NULL)) {
-    LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_UPDATED handler."));
+  // if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_UPDATED, mg_bthing_shadow_on_state_updated, NULL)) {
+  //   LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_UPDATED handler."));
+  //   return false;
+  // }
+  
+  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGED, mg_bthing_shadow_on_state_event, NULL)) {
+    LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGED handler."));
     return false;
   }
-  
+
+  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_PUBLISHING mg_bthing_shadow_on_state_event, NULL)) {
+    LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_PUBLISHING handler."));
+    return false;
+  }
+
   // if (s_ctx.optimize_enabled) {
   //   if (mg_bthing_shadow_start_optimize_timer(mg_bthing_shadow_optimize_timer_cb) == MGOS_INVALID_TIMER_ID) {
   //     LOG(LL_DEBUG, ("Warning: unable to start the Shadow Optimizer."));
