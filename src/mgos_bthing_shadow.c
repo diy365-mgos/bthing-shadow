@@ -134,7 +134,6 @@ static void mg_bthing_shadow_optimize_timer_cb(void *arg) {
     // stop the optimizer timer
     mgos_clear_timer(s_ctx.optimize_timer_id);
     s_ctx.optimize_timer_id = MGOS_INVALID_TIMER_ID;
-    LOG(LL_INFO, ("STOP OPTIMIZER"));
   }
   (void) arg;
 }
@@ -182,7 +181,6 @@ static void mg_bthing_shadow_on_state_event(int ev, void *ev_data, void *userdat
     // In both cases I must collect multiple STATE_UPDATED events
     // into a single one. So I start the optimizer timer.
     s_ctx.optimize_timer_id = mgos_set_timer(s_ctx.optimize_timeout, MGOS_TIMER_REPEAT, mg_bthing_shadow_optimize_timer_cb, NULL);
-    LOG(LL_INFO, ("START OPTIMIZER"));
   }
 
   if (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID) {
