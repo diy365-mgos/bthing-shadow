@@ -35,7 +35,7 @@ struct mgos_bthing_shadow_state {
   enum mgos_bthing_state_flag state_flags;
 };
 ```
-Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED`, `MGOS_EV_BTHING_SHADOW_UPDATED` and `MGOS_EV_BTHING_SHADOW_PUBLISHING` event's handlers (see [mgos_event_handler_t](https://mongoose-os.com/docs/mongoose-os/api/core/mgos_event.h.md#mgos_event_handler_t)).
+Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED` and `MGOS_EV_BTHING_SHADOW_PUBLISHING` event's handlers (see [mgos_event_handler_t](https://mongoose-os.com/docs/mongoose-os/api/core/mgos_event.h.md#mgos_event_handler_t)).
 
 |Field||
 |--|--|
