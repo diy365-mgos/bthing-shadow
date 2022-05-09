@@ -18,7 +18,6 @@ The library adds the `bthing.shadow` section to the device configuration:
 ```c
 enum mgos_bthing_shadow_event {
   MGOS_EV_BTHING_SHADOW_CHANGED,
-  MGOS_EV_BTHING_SHADOW_UPDATED,
   MGOS_EV_BTHING_SHADOW_PUBLISHING
 };
 ```
@@ -26,9 +25,8 @@ Events triggered by a shadow state. Use [mgos_event_add_handler()](https://mongo
 
 |Event||
 |--|--|
-|MGOS_EV_BTHING_SHADOW_CHANGED|Triggered when the shadow state is changed. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.<br><br>Allowed `state_flags` are: `MGOS_BTHING_STATE_FLAG_CHANGED` and optionally `MGOS_BTHING_STATE_FLAG_FORCED_PUB`.|
-|MGOS_EV_BTHING_SHADOW_UPDATED|Triggered when the shadow state has been updated. It is triggered also if the shadow state is not changed. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.<br><br>Allowed `state_flags` are: `MGOS_BTHING_STATE_FLAG_UPDATED` and optionally `MGOS_BTHING_STATE_FLAG_UNCHANGED`, `MGOS_BTHING_STATE_FLAG_CHANGED`, `MGOS_BTHING_STATE_FLAG_FORCED_PUB`.|
-|MGOS_EV_BTHING_SHADOW_PUBLISHING|Triggered when the shadow state is changed or the publish has been forcibly requested invoking [mgos_bthing_update_state()](https://github.com/diy365-mgos/bthing#mgos_bthing_update_state) or [mgos_bthing_update_states()](https://github.com/diy365-mgos/bthing#mgos_bthing_update_states). The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.<br><br>This event is not triggered if all changed/updated bThings are private instances (see [mgos_bthing_make_private()](#mgos_bthing_make_private) function).<br><br>Allowed `state_flags` are: `MGOS_BTHING_STATE_FLAG_UPDATED` and optionally `MGOS_BTHING_STATE_FLAG_UNCHANGED`, `MGOS_BTHING_STATE_FLAG_CHANGED`, `MGOS_BTHING_STATE_FLAG_FORCED_PUB`.|
+|MGOS_EV_BTHING_SHADOW_CHANGED|Triggered when the shadow state is changed. The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.<br><br>Allowed `state_flags` are: `MGOS_BTHING_STATE_FLAG_CHANGED`, `MGOS_BTHING_STATE_FLAG_PUBLISHING` and optionally `MGOS_BTHING_STATE_FLAG_FORCED_PUBLISH`.|
+|MGOS_EV_BTHING_SHADOW_PUBLISHING|Triggered when the shadow state is changed or the publish has been forcibly requested invoking [mgos_bthing_update_state(..., true)](https://github.com/diy365-mgos/bthing#mgos_bthing_update_state) or [mgos_bthing_update_states(true)](https://github.com/diy365-mgos/bthing#mgos_bthing_update_states). The event-data passed to the handler is a `struct mgos_bthing_shadow_state*`.<br><br>This event is not triggered if all changed/updated bThings are private instances (see [mgos_bthing_make_private()](#mgos_bthing_make_private) function).<br><br>Allowed `state_flags` are: `MGOS_BTHING_STATE_FLAG_PUBLISHING` and optionally `MGOS_BTHING_STATE_FLAG_CHANGED` and `MGOS_BTHING_STATE_FLAG_FORCED_PUBLISH`.|
 ### mgos_bthing_shadow_state
 ```c
 struct mgos_bthing_shadow_state {
@@ -44,15 +42,6 @@ Event-data passed to `MGOS_EV_BTHING_SHADOW_CHANGED`, `MGOS_EV_BTHING_SHADOW_UPD
 |full_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing all states.|
 |delta_shadow|A [bVariantDictionary](https://github.com/diy365-mgos/bvar-dic) containing only changed states.|
 |state_flags|Shadow state flags. It could be a combination of one or more [mgos_bthing_state_flag](https://github.com/diy365-mgos/bthing#mgos_bthing_state_flag) flags depending on the triggered [event](#mgos_bthing_shadow_event).<br><br>Note: `MGOS_BTHING_STATE_FLAG_INITIALIZING`, `MGOS_BTHING_STATE_FLAG_CHANGING` and `MGOS_BTHING_STATE_FLAG_INITIALIZED` are not used.|
-<!-- ### mgos_bthing_shadow_disable
-```c
-bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
-```
-Excludes the state of a bThing from the shadow. Returns `true` on success, or `false` otherwise.
-
-|Parameter||
-|--|--|
-|thing|A bThing.| -->
 ### mgos_bthing_shadow_set
 ```c
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow);

@@ -376,12 +376,11 @@ static void mg_bthing_shadow_on_state_event(int ev, void *ev_data, void *userdat
   // ignore events from private instances
   if (mg_bthing_has_flag(arg->thing, MG_BTHING_FLAG_ISPRIVATE)) return;
 
-  s_ctx.last_event = mgos_uptime_micros();
-
   
+
   if (ev == MGOS_EV_BTHING_STATE_CHANGED) {
     // set MGOS_BTHING_STATE_FLAG_CHANGED flag
-    s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;
+    s_ctx.state.state_flags |= (MGOS_BTHING_STATE_FLAG_CHANGED | MGOS_BTHING_STATE_FLAG_PUBLISHING);
     // add the changed thing to the delta-shadow
     if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.delta_shadow, arg->thing)) {
       LOG(LL_ERROR, ("Something went wrong adding '%s' state to the delta-shadow on MGOS_EV_BTHING_STATE_CHANGED event.",
@@ -389,7 +388,11 @@ static void mg_bthing_shadow_on_state_event(int ev, void *ev_data, void *userdat
     }
   } else if (ev == MGOS_EV_BTHING_STATE_PUBLISHING) {
     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_PUBLISHING;
+  } else {
+    return; // invalid event
   }
+
+  s_ctx.last_event = mgos_uptime_micros();
 
   bool forced_pub = ((arg->state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUBLISH) == MGOS_BTHING_STATE_FLAG_FORCED_PUBLISH);
   if (forced_pub) s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_FORCED_PUBLISH;
