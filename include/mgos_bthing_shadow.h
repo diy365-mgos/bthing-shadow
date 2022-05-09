@@ -27,11 +27,6 @@ extern "C" {
 
 #define MGOS_BTHING_SHADOW_EVENT_BASE MGOS_EVENT_BASE('B', 'S', 'W')
 #define MGOS_EV_BTHING_SHADOW_ANY MGOS_BTHING_SHADOW_EVENT_BASE
-// enum mgos_bthing_shadow_event {
-//   MGOS_EV_BTHING_SHADOW_CHANGED = MGOS_BTHING_SHADOW_EVENT_BASE,
-//   MGOS_EV_BTHING_SHADOW_UPDATED,
-//   MGOS_EV_BTHING_SHADOW_PUBLISHING
-// };
 enum mgos_bthing_shadow_event {
   MGOS_EV_BTHING_SHADOW_CHANGED = (MGOS_EV_BTHING_SHADOW_ANY + 1),
   MGOS_EV_BTHING_SHADOW_PUBLISHING
@@ -42,8 +37,6 @@ struct mgos_bthing_shadow_state {
   mgos_bvarc_t delta_shadow;
   enum mgos_bthing_state_flag state_flags;
 };
-
-//bool mgos_bthing_shadow_disable(mgos_bthing_t thing);
 
 #if MGOS_BTHING_HAVE_ACTUATORS
 bool mgos_bthing_shadow_set(mgos_bvarc_t shadow);
