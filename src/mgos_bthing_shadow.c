@@ -378,7 +378,7 @@ static void mg_bthing_shadow_on_state_event(int ev, void *ev_data, void *userdat
 
   s_ctx.last_event = mgos_uptime_micros();
 
-  bool forced_pub = false;
+  
   if (ev == MGOS_EV_BTHING_STATE_CHANGED) {
     // set MGOS_BTHING_STATE_FLAG_CHANGED flag
     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_CHANGED;
@@ -389,9 +389,11 @@ static void mg_bthing_shadow_on_state_event(int ev, void *ev_data, void *userdat
     }
   } else if (ev == MGOS_EV_BTHING_STATE_PUBLISHING) {
     s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_PUBLISHING;
-    forced_pub = ((arg->state_flags & MGOS_BTHING_STATE_FLAG_CHANGED) != MGOS_BTHING_STATE_FLAG_CHANGED);
   }
 
+  bool forced_pub = ((arg->state_flags & MGOS_BTHING_STATE_FLAG_FORCED_PUBLISH) == MGOS_BTHING_STATE_FLAG_FORCED_PUBLISH);
+  if (forced_pub) s_ctx.state.state_flags |= MGOS_BTHING_STATE_FLAG_FORCED_PUBLISH;
+  
   if ((s_ctx.optimize_enabled || forced_pub) && (s_ctx.optimize_timer_id == MGOS_INVALID_TIMER_ID)) {
     // Optimization is ON or a forced publish has been requested.
     // In both cases I must collect multiple STATE_UPDATED events
