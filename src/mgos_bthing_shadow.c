@@ -501,7 +501,7 @@ bool mgos_bthing_shadow_init() {
     return false;
   }
 
-  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_PUBLISHING mg_bthing_shadow_on_state_event, NULL)) {
+  if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_PUBLISHING, mg_bthing_shadow_on_state_event, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_PUBLISHING handler."));
     return false;
   }
