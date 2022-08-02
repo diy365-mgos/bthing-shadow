@@ -100,6 +100,8 @@ static void mg_bthing_shadow_on_made_private(int ev, void *ev_data, void *userda
   #if MGOS_BTHING_HAVE_SENSORS
   if (ev_data) {
     mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data);
+    LOG(LL_INFO, ("State of '%s' state has been removed from the full-shadow.",
+      mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
   }
   #else
   (void) ev_data;
