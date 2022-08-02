@@ -256,6 +256,8 @@ bool mgos_bthing_shadow_init() {
   if (!mgos_event_add_handler(MGOS_EV_BTHING_CREATED, mg_bthing_shadow_on_created, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_CREATED handler."));
     return false;
+  } else {
+    LOG(LL_INFO, ("MGOS_EV_BTHING_CREATED handler registered."));
   }
 
   if (!mgos_event_add_handler(MGOS_EV_BTHING_MADE_PRIVATE, mg_bthing_shadow_on_made_private, NULL)) {
