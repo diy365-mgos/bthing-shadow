@@ -33,7 +33,10 @@ bool mg_bthing_shadow_add_state(mgos_bvar_t shadow, mgos_bthing_t thing) {
       }
     }
   }
-  return mgos_bvar_add_key(dic, mgos_bthing_get_id(thing), (mgos_bvar_t)mg_bthing_get_raw_state(thing));
+
+  const char* key = mgos_bthing_get_id(thing);
+  if (mgos_bvar_has_key(dic, key)) return true; // already added
+  return mgos_bvar_add_key(dic, key, (mgos_bvar_t)mg_bthing_get_raw_state(thing));
 }
 
 mgos_bvarc_t mg_bthing_shadow_get_state(mgos_bvarc_t shadow, mgos_bthing_t thing) {
@@ -77,41 +80,45 @@ void mg_bthing_shadow_empty(mgos_bvar_t shadow) {
   }
 }
 
-#endif // MGOS_BTHING_HAVE_SENSORS
+void mg_bthing_shadow_unregister_state(mgos_bthing_t thing) {
+  if (thing) {
+    mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
+    LOG(LL_DEBUG, ("State of '%s' state has been removed from the full-shadow.", mgos_bthing_get_uid(thing)));
+  }
+}
+
+bool mg_bthing_shadow_register_state(mgos_bthing_t thing) {
+  if (!thing) return false;
+  bool success = mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
+  if (!success) {
+    LOG(LL_ERROR, ("Something went wrong adding '%s' state to the full-shadow.", mgos_bthing_get_uid(thing)));
+  } else {
+    LOG(LL_DEBUG, ("State of '%s' state successfully added to the full-shadow.", mgos_bthing_get_uid(thing)));
+  }
+  return success;
+}
+
+void mg_bthing_shadow_register_states() {
+  mgos_bthing_t thing = NULL;
+  mgos_bthing_enum_t enum = mgos_bthing_get_all();
+  while(mgos_bthing_get_next(&enum, &thing)) {
+    if (!mgos_bthing_is_private(thing)) {
+      mg_bthing_shadow_register_state(mgos_bthing_t thing);
+    }
+  }
+}
 
 static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
-  #if MGOS_BTHING_HAVE_SENSORS
-  if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data)) {
-    LOG(LL_ERROR, ("Something went wrong adding '%s' state to the full-shadow.",
-      mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
-  } else {
-    LOG(LL_INFO, ("State of '%s' state successfully added to the full-shadow.",
-      mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
-  }
-  #else
-  (void) ev_data;
-  #endif
-  
+  mg_bthing_shadow_register_state((mgos_bthing_t)ev_data);
   (void) ev;
   (void) userdata;
 }
 
 static void mg_bthing_shadow_on_made_private(int ev, void *ev_data, void *userdata) {
-  #if MGOS_BTHING_HAVE_SENSORS
-  if (ev_data) {
-    mg_bthing_shadow_remove_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data);
-    LOG(LL_INFO, ("State of '%s' state has been removed from the full-shadow.",
-      mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
-  }
-  #else
-  (void) ev_data;
-  #endif
-  
+  mg_bthing_shadow_unregister_state((mgos_bthing_t)ev_data);  
   (void) ev;
   (void) userdata;
 }
-
-#if MGOS_BTHING_HAVE_SENSORS
 
 static bool mg_bthing_shadow_trigger_events() {
   if (s_ctx.last_event == 0) return false;
@@ -253,19 +260,20 @@ bool mgos_bthing_shadow_init() {
 
   if (!mgos_event_register_base(MGOS_BTHING_SHADOW_EVENT_BASE, "bThing Shadow events")) return false;
 
+  #if MGOS_BTHING_HAVE_SENSORS
+
+  mg_bthing_shadow_register_states();
+
   if (!mgos_event_add_handler(MGOS_EV_BTHING_CREATED, mg_bthing_shadow_on_created, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_CREATED handler."));
     return false;
-  } else {
-    LOG(LL_INFO, ("MGOS_EV_BTHING_CREATED handler registered."));
   }
 
   if (!mgos_event_add_handler(MGOS_EV_BTHING_MADE_PRIVATE, mg_bthing_shadow_on_made_private, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_MADE_PRIVATE handler."));
     return false;
   } 
-  
-  #if MGOS_BTHING_HAVE_SENSORS
+
   if (!mgos_event_add_handler(MGOS_EV_BTHING_STATE_CHANGING, mg_bthing_shadow_on_state_changing, NULL)) {
     LOG(LL_ERROR, ("Error registering MGOS_EV_BTHING_STATE_CHANGING handler."));
     return false;
