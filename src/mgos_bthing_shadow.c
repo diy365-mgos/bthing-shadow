@@ -100,8 +100,8 @@ bool mg_bthing_shadow_register_state(mgos_bthing_t thing) {
 
 void mg_bthing_shadow_register_states() {
   mgos_bthing_t thing = NULL;
-  mgos_bthing_enum_t enum = mgos_bthing_get_all();
-  while(mgos_bthing_get_next(&enum, &thing)) {
+  mgos_bthing_enum_t things_enum = mgos_bthing_get_all();
+  while(mgos_bthing_get_next(&things_enum, &thing)) {
     if (!mgos_bthing_is_private(thing)) {
       mg_bthing_shadow_register_state(mgos_bthing_t thing);
     }
