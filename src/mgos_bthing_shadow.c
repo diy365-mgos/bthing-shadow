@@ -84,6 +84,9 @@ static void mg_bthing_shadow_on_created(int ev, void *ev_data, void *userdata) {
   if (!mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, (mgos_bthing_t)ev_data)) {
     LOG(LL_ERROR, ("Something went wrong adding '%s' state to the full-shadow.",
       mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
+  } else {
+    LOG(LL_INFO, ("State of '%s' state successfully added to the full-shadow.",
+      mgos_bthing_get_uid((mgos_bthing_t)ev_data)));
   }
   #else
   (void) ev_data;
