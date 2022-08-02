@@ -89,6 +89,8 @@ void mg_bthing_shadow_unregister_state(mgos_bthing_t thing) {
 
 bool mg_bthing_shadow_register_state(mgos_bthing_t thing) {
   if (!thing) return false;
+  if (mgos_bthing_is_private(thing)) return false;
+
   bool success = mg_bthing_shadow_add_state((mgos_bvar_t)s_ctx.state.full_shadow, thing);
   if (!success) {
     LOG(LL_ERROR, ("Something went wrong adding '%s' state to the full-shadow.", mgos_bthing_get_uid(thing)));
@@ -102,9 +104,7 @@ void mg_bthing_shadow_register_states() {
   mgos_bthing_t thing = NULL;
   mgos_bthing_enum_t things_enum = mgos_bthing_get_all();
   while(mgos_bthing_get_next(&things_enum, &thing)) {
-    if (!mgos_bthing_is_private(thing)) {
-      mg_bthing_shadow_register_state(thing);
-    }
+    mg_bthing_shadow_register_state(thing);
   }
 }
 
