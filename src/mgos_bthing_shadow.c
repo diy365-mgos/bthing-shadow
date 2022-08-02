@@ -103,7 +103,7 @@ void mg_bthing_shadow_register_states() {
   mgos_bthing_enum_t things_enum = mgos_bthing_get_all();
   while(mgos_bthing_get_next(&things_enum, &thing)) {
     if (!mgos_bthing_is_private(thing)) {
-      mg_bthing_shadow_register_state(mgos_bthing_t thing);
+      mg_bthing_shadow_register_state(thing);
     }
   }
 }
@@ -262,6 +262,8 @@ bool mgos_bthing_shadow_init() {
 
   #if MGOS_BTHING_HAVE_SENSORS
 
+  // Register all bThigs that have been created before
+  // the library initialization.
   mg_bthing_shadow_register_states();
 
   if (!mgos_event_add_handler(MGOS_EV_BTHING_CREATED, mg_bthing_shadow_on_created, NULL)) {
